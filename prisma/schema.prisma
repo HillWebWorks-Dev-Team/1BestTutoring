@@ -2,12 +2,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Local development uses SQLite so the app runs immediately.
-// Before deploying to Vercel, switch provider to "postgresql" and set DATABASE_URL
-// to a Neon or Vercel Postgres connection string. The models below avoid
-// provider-specific features so that switch is a one-line change.
+// Production and Vercel use PostgreSQL (Neon or Vercel Postgres).
+// Set DATABASE_URL to that connection string. Local SQLite is no longer used once this is set.
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
