@@ -1,0 +1,96 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { Logo } from "@/components/brand";
+import { logout } from "@/server/auth";
+
+export type DashLink = { href: string; label: string; locked?: boolean; badge?: number };
+
+export function DashboardShell({
+  name,
+  role,
+  links,
+  unread,
+  demo,
+  children,
+}: {
+  name: string;
+  role: string;
+  links: DashLink[];
+  unread: number;
+  demo: boolean;
+  children: React.ReactNode;
+}) {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="min-h-screen bg-ivory md:grid md:grid-cols-[250px_1fr]">
+      <aside className={`${open ? "block" : "hidden"} border-r border-white/10 bg-navy text-ivory md:block`}>
+        <div className="flex h-full flex-col px-4 py-5">
+          <Link href="/" onClick={() => setOpen(false)}>
+            <Logo light />
+          </Link>
+          <p className="mt-6 text-[11px] uppercase tracking-[0.18em] text-gold/70">{role}</p>
+          <nav className="mt-3 grid gap-1">
+            {links.map((link) => {
+              const activeHref = [...links]
+                .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
+                .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+              const active = link.href === activeHref;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.locked ? "#" : link.href}
+                  aria-disabled={link.locked}
+                  onClick={() => setOpen(false)}
+                  className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm ${active ? "bg-gold/15 text-gold" : "text-ivory/75 hover:bg-white/5"} ${link.locked ? "pointer-events-none opacity-40" : ""}`}
+                >
+                  <span>{link.label}</span>
+                  {link.badge ? (
+                    <span
+                      className={`inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${
+                        active ? "bg-gold text-deep" : "bg-gold text-deep"
+                      }`}
+                      aria-label={`${link.badge} unread`}
+                    >
+                      {link.badge > 99 ? "99+" : link.badge}
+                    </span>
+                  ) : null}
+                </Link>
+              );
+            })}
+          </nav>
+          <div className="mt-auto pt-8">
+            <Link href="/dashboard/notifications" className="block text-sm text-ivory/80" onClick={() => setOpen(false)}>
+              Notifications{unread ? ` (${unread})` : ""}
+            </Link>
+            <p className="mt-4 text-sm text-ivory">{name}</p>
+            <form action={logout} className="mt-3">
+              <button className="text-sm text-ivory/60" type="submit">
+                Sign out
+              </button>
+            </form>
+          </div>
+        </div>
+      </aside>
+      <div>
+        <div className="flex items-center justify-between border-b border-line px-4 py-3 md:hidden">
+          <button className="btn btn-line" type="button" onClick={() => setOpen((value) => !value)}>
+            {open ? "Close" : "Menu"}
+          </button>
+          <Link href="/dashboard/notifications" className="text-sm">
+            Alerts{unread ? ` (${unread})` : ""}
+          </Link>
+        </div>
+        {demo ? (
+          <div className="border-b border-cream bg-cream/70 px-5 py-2 text-center text-xs text-navy">
+            Demo payments are on. Splits are calculated for real, and no card is charged until Stripe keys are added.
+          </div>
+        ) : null}
+        <div className="min-h-[70vh] px-4 py-6 text-navy md:px-8 md:py-8">{children}</div>
+      </div>
+    </div>
+  );
+}
