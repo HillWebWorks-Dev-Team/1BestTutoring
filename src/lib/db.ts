@@ -1,7 +1,11 @@
 import { PrismaClient } from "@prisma/client";
 
+/** Bump when Prisma models change so hot reload drops a stale client. */
+const PRISMA_SCHEMA_VERSION = 2;
+
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
+  prismaSchemaVersion?: number;
 };
 
 function createPrisma() {
@@ -11,14 +15,17 @@ function createPrisma() {
 }
 
 function getPrisma() {
-  const existing = globalForPrisma.prisma;
-  // Hot reload can keep a client built before a schema push; recreate if needed.
-  if (existing && "pinnedConversation" in existing) return existing;
-  if (existing) {
-    void existing.$disconnect().catch(() => undefined);
+  if (globalForPrisma.prisma && globalForPrisma.prismaSchemaVersion === PRISMA_SCHEMA_VERSION) {
+    return globalForPrisma.prisma;
+  }
+  if (globalForPrisma.prisma) {
+    void globalForPrisma.prisma.$disconnect().catch(() => undefined);
   }
   const client = createPrisma();
-  if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = client;
+  if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.prisma = client;
+    globalForPrisma.prismaSchemaVersion = PRISMA_SCHEMA_VERSION;
+  }
   return client;
 }
 
