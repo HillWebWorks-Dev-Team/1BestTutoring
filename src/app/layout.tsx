@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Caveat, Inter, Playfair_Display } from "next/font/google";
+import { NavigationProgress } from "@/components/site/NavigationProgress";
 import { BRAND } from "@/lib/brand";
 import "./globals.css";
 
@@ -17,7 +19,12 @@ export const dynamic = "force-dynamic";
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable} ${caveat.variable}`}>
-      <body className="min-h-screen bg-ivory font-sans text-ink antialiased">{children}</body>
+      <body className="min-h-screen bg-ivory font-sans text-ink antialiased">
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
+        {children}
+      </body>
     </html>
   );
 }

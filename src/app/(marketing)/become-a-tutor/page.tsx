@@ -55,6 +55,11 @@ export default async function BecomeTutorPage() {
                   subjects: splitList(profile.subjects),
                   gradeLevels: splitList(profile.gradeLevels),
                   hourlyRate: profile.hourlyRateCents / 100,
+                  linkedinUrl: profile.linkedinUrl || undefined,
+                  education: profile.education,
+                  achievements: profile.achievements,
+                  certifications: profile.certifications,
+                  testScores: profile.testScores,
                 }
               : user
                 ? { name: user.name, email: user.email }

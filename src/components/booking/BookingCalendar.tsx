@@ -2,6 +2,7 @@
 
 import { DateTime } from "luxon";
 import { useMemo, useState } from "react";
+import { Spinner } from "@/components/ui/PageLoader";
 import { bookSlot, getOpenSlots } from "@/server/booking";
 import { formatTime } from "@/lib/format";
 
@@ -118,26 +119,76 @@ export function BookingCalendar({
       <div className="card flex flex-col p-5">
         <p className="kicker">{type === "CONSULTATION" ? "15 minutes · free" : priceLabel}</p>
         <h2 className="mt-2 font-serif text-3xl">{date ? DateTime.fromISO(date).toFormat("cccc, LLL d") : "Choose a date"}</h2>
-        {lockedReason ? <p className="mt-4 text-sm leading-6 text-mute">{lockedReason}</p> : null}
+        {lockedReason ? (
+          <p className="mt-4 rounded-xl border border-[#e7c7c2] bg-[#fbf1ef] px-3 py-3 text-sm leading-6 text-[#7d332c]">
+            {lockedReason}
+          </p>
+        ) : null}
         <div className="mt-5 grid grid-cols-2 gap-2">
-          {loading ? <p className="text-sm text-mute">Checking the calendar…</p> : null}
+          {loading ? (
+            <p className="col-span-2 inline-flex items-center gap-2 text-sm text-mute">
+              <Spinner className="h-4 w-4" />
+              Checking the calendar…
+            </p>
+          ) : null}
           {!loading && date && slots.length === 0 ? <p className="col-span-2 text-sm text-mute">No open times on this date.</p> : null}
           {slots.map((slot) => (
             <button
               key={slot}
               type="button"
               onClick={() => setSelected(slot)}
-              className={`rounded-xl border px-3 py-3 text-sm ${selected === slot ? "border-gold bg-navy text-ivory" : "border-line bg-white"}`}
+              disabled={Boolean(lockedReason)}
+              className={`rounded-xl border px-3 py-3 text-sm ${selected === slot ? "border-gold bg-navy text-ivory" : "border-line bg-white"} disabled:cursor-not-allowed disabled:opacity-50`}
             >
               {formatTime(new Date(slot), viewerTimeZone)}
             </button>
           ))}
         </div>
         {error ? <p className="mt-4 text-sm text-[#7d332c]">{error}</p> : null}
-        <button className="btn btn-primary mt-auto" type="button" disabled={!selected || pending || Boolean(lockedReason)} onClick={confirm}>
-          {pending ? "Confirming…" : type === "CONSULTATION" ? "Confirm free consultation" : "Confirm and pay"}
+        <button className="btn btn-primary mt-auto" type="button" disabled={!selected || pending || Boolean(lockedReason)} onClick={confirm} aria-busy={pending}>
+          {pending ? (
+            <span className="inline-flex items-center gap-2">
+              <Spinner className="h-4 w-4" />
+              Confirming…
+            </span>
+          ) : lockedReason ? (
+            "Booking unavailable"
+          ) : type === "CONSULTATION" ? (
+            "Confirm free consultation"
+          ) : (
+            "Confirm and pay"
+          )}
         </button>
       </div>
+
+      {pending ? (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-deep/55 px-5 backdrop-blur-[2px]"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="checkout-loading-title"
+          aria-busy="true"
+        >
+          <div className="card w-full max-w-md p-6 shadow-[0_24px_60px_-28px_rgb(11_29_51_/_0.65)]">
+            <div className="flex items-start gap-4">
+              <span className="mt-0.5 grid h-11 w-11 shrink-0 place-items-center rounded-full border border-gold/40 bg-mist">
+                <Spinner className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="kicker">{type === "CONSULTATION" ? "Consultation" : "Payment"}</p>
+                <h2 id="checkout-loading-title" className="mt-1 font-serif text-3xl text-navy">
+                  {type === "CONSULTATION" ? "Confirming your booking…" : "Starting secure checkout…"}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-mute">
+                  {type === "CONSULTATION"
+                    ? "We’re locking the time and preparing your confirmation."
+                    : "You’ll be redirected to Stripe to complete payment. Don’t close this tab."}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { DateTime } from "luxon";
 import { useMemo, useState } from "react";
 import { SessionList, type SessionItem } from "@/components/dashboard/SessionList";
+import { formatTime } from "@/lib/format";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -10,6 +11,13 @@ export type CalendarEvent = Omit<SessionItem, "startsAt" | "endsAt"> & {
   startsAt: string;
   endsAt: string;
 };
+
+function eventTone(status: string, selected: boolean) {
+  if (selected) return "bg-gold/90 text-deep";
+  if (status === "CONFIRMED") return "bg-navy text-ivory";
+  if (status === "COMPLETED") return "bg-gold/25 text-navy";
+  return "bg-slate/15 text-navy";
+}
 
 export function DashboardCalendar({
   events,
@@ -71,13 +79,13 @@ export function DashboardCalendar({
   }).length;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-      <div className="card p-4 sm:p-5">
+    <div className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+      <div className="card overflow-hidden p-3 sm:p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="font-serif text-3xl">{cursor.toFormat("LLLL yyyy")}</h2>
             <p className="mt-1 text-sm text-mute">
-              {monthCount} session{monthCount === 1 ? "" : "s"} this month
+              {monthCount} session{monthCount === 1 ? "" : "s"} this month · events show on each day
             </p>
           </div>
           <div className="flex gap-2">
@@ -101,69 +109,58 @@ export function DashboardCalendar({
           </div>
         </div>
 
-        <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold uppercase tracking-[0.12em] text-mute">
+        <div className="grid grid-cols-7 gap-px overflow-hidden rounded-xl border border-line bg-line text-center text-xs font-semibold uppercase tracking-[0.12em] text-mute">
           {WEEKDAYS.map((day) => (
-            <div key={day} className="py-2">
+            <div key={day} className="bg-mist py-2">
               {day}
             </div>
           ))}
-        </div>
-
-        <div className="grid grid-cols-7 gap-1">
           {days.map((day, index) => {
-            if (!day) return <div key={`empty-${index}`} className="min-h-16 rounded-lg bg-transparent sm:min-h-20" />;
+            if (!day) return <div key={`empty-${index}`} className="min-h-24 bg-paper/70 sm:min-h-28 lg:min-h-32" />;
             const iso = day.toISODate() || "";
             const dayItems = byDay.get(iso) || [];
             const active = dayItems.filter((item) => item.status !== "CANCELLED");
             const isToday = day.hasSame(today, "day");
             const isSelected = iso === selected;
-            const hasConfirmed = active.some((item) => item.status === "CONFIRMED");
-            const hasCompleted = active.some((item) => item.status === "COMPLETED");
+            const visible = active.slice(0, 3);
+            const overflow = active.length - visible.length;
 
             return (
               <button
                 key={iso}
                 type="button"
                 onClick={() => setSelected(iso)}
-                className={`min-h-16 rounded-lg border p-1.5 text-left transition sm:min-h-20 ${
-                  isSelected
-                    ? "border-navy bg-navy text-ivory"
-                    : isToday
-                      ? "border-gold bg-gold/10 text-navy"
-                      : active.length
-                        ? "border-line bg-paper hover:border-gold/50"
-                        : "border-transparent text-mute hover:border-line hover:bg-paper"
+                className={`flex min-h-24 flex-col gap-1 bg-paper p-1.5 text-left transition sm:min-h-28 lg:min-h-32 ${
+                  isSelected ? "bg-navy text-ivory ring-2 ring-inset ring-gold" : isToday ? "bg-gold/10" : "hover:bg-mist"
                 }`}
               >
-                <span className={`block text-sm font-semibold ${isSelected ? "text-ivory" : ""}`}>{day.day}</span>
-                {active.length ? (
-                  <span className="mt-1 flex flex-wrap gap-1">
-                    {active.slice(0, 3).map((item) => (
+                <span
+                  className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-sm font-semibold ${
+                    isToday && !isSelected ? "bg-gold text-deep" : isSelected ? "bg-gold text-deep" : "text-navy"
+                  } ${isSelected ? "" : ""}`}
+                >
+                  {day.day}
+                </span>
+                <span className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-hidden">
+                  {visible.map((item) => {
+                    const person = role === "TUTOR" ? item.studentName.split(" ")[0] : item.tutorName.split(" ")[0];
+                    const label = item.type === "CONSULTATION" ? "Consult" : "Session";
+                    return (
                       <span
                         key={item.id}
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          isSelected
-                            ? "bg-gold"
-                            : item.status === "CONFIRMED"
-                              ? "bg-navy"
-                              : item.status === "COMPLETED"
-                                ? "bg-gold"
-                                : "bg-slate"
-                        }`}
-                        title={`${item.type === "CONSULTATION" ? "Consult" : "Session"} · ${item.status}`}
-                      />
-                    ))}
-                    {active.length > 3 ? (
-                      <span className={`text-[10px] ${isSelected ? "text-ivory/70" : "text-mute"}`}>+{active.length - 3}</span>
-                    ) : null}
-                  </span>
-                ) : null}
-                {active.length === 1 && !isSelected ? (
-                  <span className="mt-1 hidden truncate text-[10px] leading-tight text-mute sm:block">
-                    {role === "TUTOR" ? active[0].studentName.split(" ")[0] : active[0].tutorName.split(" ")[0]}
-                    {hasConfirmed ? "" : hasCompleted ? " · done" : ""}
-                  </span>
-                ) : null}
+                        className={`truncate rounded-md px-1.5 py-0.5 text-[10px] font-medium leading-tight sm:text-[11px] ${eventTone(item.status, isSelected)}`}
+                        title={`${formatTime(item.startsAt, timeZone)} · ${label} · ${person}`}
+                      >
+                        <span className="hidden sm:inline">{formatTime(item.startsAt, timeZone)} </span>
+                        {person}
+                        <span className="opacity-80"> · {label}</span>
+                      </span>
+                    );
+                  })}
+                  {overflow > 0 ? (
+                    <span className={`px-1 text-[10px] ${isSelected ? "text-ivory/75" : "text-mute"}`}>+{overflow} more</span>
+                  ) : null}
+                </span>
               </button>
             );
           })}

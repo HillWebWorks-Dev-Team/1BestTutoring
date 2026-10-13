@@ -22,7 +22,7 @@ async function zoomToken() {
   const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
   const response = await fetch(
     `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${encodeURIComponent(accountId)}`,
-    { method: "POST", headers: { Authorization: `Bearer ${credentials}` } },
+    { method: "POST", headers: { Authorization: `Basic ${credentials}` } },
   );
   if (!response.ok) return null;
   const json = (await response.json()) as { access_token: string; expires_in: number };
@@ -30,18 +30,32 @@ async function zoomToken() {
   return json.access_token;
 }
 
-export async function createZoomMeeting(input: MeetingInput): Promise<MeetingLink> {
-  const token = await zoomToken();
-  if (!token) return { joinUrl: null, startUrl: null, meetingId: null };
+async function hostPath(token: string) {
+  if (process.env.ZOOM_HOST_USER_ID) return `users/${encodeURIComponent(process.env.ZOOM_HOST_USER_ID)}`;
+  // Server-to-Server apps can resolve the account owner via /users/me.
+  const me = await fetch("https://api.zoom.us/v2/users/me", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (me.ok) return "users/me";
+  return null;
+}
 
-  const response = await fetch("https://api.zoom.us/v2/users/me/meetings", {
+export async function createZoomMeeting(input: MeetingInput): Promise<MeetingLink> {
+  const empty = { joinUrl: null, startUrl: null, meetingId: null };
+  const token = await zoomToken();
+  if (!token) return empty;
+
+  const path = await hostPath(token);
+  if (!path) return empty;
+
+  const response = await fetch(`https://api.zoom.us/v2/${path}/meetings`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       topic: input.topic,
       type: 2,
       start_time: input.startsAt.toISOString(),
-      duration: input.durationMin,
+      duration: Math.max(1, input.durationMin),
       timezone: "UTC",
       settings: {
         waiting_room: true,
@@ -51,7 +65,7 @@ export async function createZoomMeeting(input: MeetingInput): Promise<MeetingLin
     }),
   });
 
-  if (!response.ok) return { joinUrl: null, startUrl: null, meetingId: null };
+  if (!response.ok) return empty;
   const json = (await response.json()) as { id: number; join_url: string; start_url: string };
   return { joinUrl: json.join_url, startUrl: json.start_url, meetingId: String(json.id) };
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
+import { Spinner } from "@/components/ui/PageLoader";
 
 export function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
@@ -17,8 +18,15 @@ export function SubmitButton({
 }) {
   const { pending } = useFormStatus();
   return (
-    <button className={className} disabled={pending} type="submit">
-      {pending ? pendingLabel : children}
+    <button className={className} disabled={pending} type="submit" aria-busy={pending}>
+      {pending ? (
+        <span className="inline-flex items-center gap-2">
+          <Spinner className="h-4 w-4" light={className.includes("btn-ghost") || className.includes("btn-gold")} />
+          {pendingLabel}
+        </span>
+      ) : (
+        children
+      )}
     </button>
   );
 }

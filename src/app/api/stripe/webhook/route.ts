@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
+import { confirmPaidBooking } from "@/lib/confirm-paid-booking";
 import { prisma } from "@/lib/db";
-import { notify } from "@/lib/notify";
-import { estimateProcessingFee, netPlatformEarnings } from "@/lib/payments";
 import { getStripe } from "@/lib/stripe";
-import { createZoomMeeting } from "@/lib/zoom";
 
 export async function POST(request: Request) {
   const stripe = getStripe();
@@ -73,55 +71,4 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ received: true });
-}
-
-async function confirmPaidBooking(bookingId: string, session: Stripe.Checkout.Session) {
-  const booking = await prisma.booking.findUnique({
-    where: { id: bookingId },
-    include: { student: { include: { user: true } }, tutor: { include: { user: true } }, transaction: true },
-  });
-  if (!booking || booking.transaction) return;
-  const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
-  const fee = estimateProcessingFee(booking.priceCents);
-  await prisma.booking.update({
-    where: { id: booking.id },
-    data: { status: "CONFIRMED", stripePaymentIntentId: paymentIntentId || null },
-  });
-  await prisma.transaction.create({
-    data: {
-      bookingId: booking.id,
-      amountCents: booking.priceCents,
-      tutorShareCents: booking.tutorShareCents,
-      platformShareCents: booking.platformShareCents,
-      stripeFeeCents: fee,
-      netPlatformCents: netPlatformEarnings(booking.platformShareCents, fee),
-      status: "SUCCEEDED",
-      stripePaymentIntentId: paymentIntentId,
-    },
-  });
-  const meeting = await createZoomMeeting({
-    topic: `Tutoring session · ${booking.tutor.user.name}`,
-    startsAt: booking.startsAt,
-    durationMin: booking.durationMin,
-  });
-  await prisma.booking.update({
-    where: { id: booking.id },
-    data: { zoomJoinUrl: meeting.joinUrl, zoomStartUrl: meeting.startUrl, zoomMeetingId: meeting.meetingId },
-  });
-  await notify({
-    userId: booking.student.userId,
-    email: booking.student.user.email,
-    type: "PAYMENT",
-    title: "Payment received",
-    body: `Your session with ${booking.tutor.user.name} is confirmed.`,
-    href: "/dashboard/student/calendar",
-  });
-  await notify({
-    userId: booking.tutor.userId,
-    email: booking.tutor.user.email,
-    type: "PAYMENT",
-    title: "Paid session booked",
-    body: `${booking.student.user.name} paid for a session. Your share is recorded.`,
-    href: "/dashboard/tutor/earnings",
-  });
 }

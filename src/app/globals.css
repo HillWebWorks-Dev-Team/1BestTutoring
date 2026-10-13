@@ -159,15 +159,30 @@ body {
   }
 }
 
+@keyframes ivy-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
 .rise {
   animation: rise 700ms ease both;
+}
+
+.ivy-float-mark {
+  animation: ivy-float 3.6s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
-  .rise {
+  .rise,
+  .ivy-float-mark {
     animation: none;
   }
   .btn:hover {

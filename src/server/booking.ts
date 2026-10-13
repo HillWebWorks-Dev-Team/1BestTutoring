@@ -175,8 +175,6 @@ export async function bookSlot(input: {
     return { error: "This tutor hasn’t finished Stripe payout setup yet, so paid sessions are paused." };
   }
 
-  const destination = user.role === "PARENT" ? "/dashboard/parent?booked=1" : "/dashboard/student/calendar?booked=1";
-
   try {
     const booking = await db.$transaction(async (tx) => {
       const cutoff = freshPendingCutoff();
@@ -239,7 +237,7 @@ export async function bookSlot(input: {
         durationMin: duration,
         studentEmail: user.email,
         destinationAccountId: tutor.stripeAccountId,
-        successPath: `${destination}&session_id={CHECKOUT_SESSION_ID}`,
+        successPath: `/dashboard/bookings/${booking.id}?paid=1`,
         cancelPath: `/tutors/${tutor.slug}/book?type=session&payment=cancelled`,
       });
       if (!session?.url) {
@@ -287,8 +285,8 @@ export async function bookSlot(input: {
       email: studentUser.email,
       type: "BOOKING",
       title: `${label} confirmed`,
-      body: `You're booked with ${tutor.user.name}. Add it to your calendar from your dashboard.`,
-      href: user.role === "PARENT" ? "/dashboard/parent" : "/dashboard/student/calendar",
+      body: `You're booked with ${tutor.user.name}. Open your booking summary for Zoom and schedule details.`,
+      href: `/dashboard/bookings/${booking.id}`,
     });
     await notify({
       userId: tutor.userId,
@@ -296,10 +294,10 @@ export async function bookSlot(input: {
       type: "BOOKING",
       title: `New ${label.toLowerCase()}`,
       body: `${studentUser.name} booked ${new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: tutor.user.timezone }).format(startsAt)}.`,
-      href: "/dashboard/tutor/calendar",
+      href: `/dashboard/bookings/${booking.id}`,
     });
     revalidatePath("/dashboard");
-    return { next: destination };
+    return { next: `/dashboard/bookings/${booking.id}` };
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Booking failed." };
   }

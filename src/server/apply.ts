@@ -77,6 +77,7 @@ export async function applyAsTutor(_state: { error?: string } | null, formData: 
       hourlyRate: z.coerce.number().positive("Enter an hourly rate."),
       availabilityNotes: z.string().optional(),
       introVideoUrl: z.string().optional(),
+      linkedinUrl: z.string().optional(),
     })
     .safeParse({
       name: formData.get("name"),
@@ -95,6 +96,7 @@ export async function applyAsTutor(_state: { error?: string } | null, formData: 
       hourlyRate: formData.get("hourlyRate"),
       availabilityNotes: formData.get("availabilityNotes"),
       introVideoUrl: formData.get("introVideoUrl"),
+      linkedinUrl: formData.get("linkedinUrl"),
     });
 
   if (!parsed.success) return { error: parsed.error.issues[0]?.message || "Check the application and try again." };
@@ -205,11 +207,13 @@ function profileData(
     testScores?: string;
     availabilityNotes?: string;
     introVideoUrl?: string;
+    linkedinUrl?: string;
   },
   subjects: string[],
   gradeLevels: string[],
   hourlyRateCents: number,
 ) {
+  const linkedinUrl = data.linkedinUrl?.trim() || "";
   return {
     university: data.university,
     major: data.major,
@@ -226,6 +230,7 @@ function profileData(
     hourlyRateCents,
     availabilityNotes: data.availabilityNotes || "",
     introVideoUrl: data.introVideoUrl || null,
+    linkedinUrl: linkedinUrl || null,
   };
 }
 
