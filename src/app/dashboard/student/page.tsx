@@ -6,6 +6,7 @@ import { formatWhen, money } from "@/lib/format";
 import { live } from "@/lib/live";
 import { portraitFor } from "@/lib/portraits";
 import { requireUser } from "@/lib/session";
+import { reviewableBookingWhere } from "@/lib/reviews";
 import { universityFor } from "@/lib/universities";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +40,7 @@ export default async function StudentHome({
     }),
     db.notification.count({ where: { userId: user.id, readAt: null } }),
     db.booking.findMany({
-      where: { studentId, type: "SESSION", status: "COMPLETED", review: null },
+      where: reviewableBookingWhere(studentId),
       include: { tutor: { include: { user: true } }, student: { include: { user: true } }, report: true, review: true },
       orderBy: { startsAt: "desc" },
       take: 5,
@@ -95,12 +96,12 @@ export default async function StudentHome({
         <section className="mt-8" id="leave-review">
           <div className="mb-3 flex items-center justify-between gap-3">
             <h2 className="font-serif text-2xl">Awaiting your review</h2>
-            <Link href="/dashboard/student/calendar" className="text-sm text-mute hover:text-navy">
-              Calendar
+            <Link href="/dashboard/student/reviews" className="text-sm text-mute hover:text-navy">
+              All reviews
             </Link>
           </div>
           <p className="mb-3 text-sm text-mute">
-            These sessions are complete. A quick review helps other families choose with confidence.
+            These confirmed sessions have ended. A quick review helps other families choose with confidence.
           </p>
           <SessionList items={needsReview.map(toItem)} role="STUDENT" timeZone={user.timezone} />
         </section>

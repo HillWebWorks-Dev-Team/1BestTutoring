@@ -254,7 +254,7 @@ export async function saveReport(formData: FormData) {
       type: "REVIEW",
       title: "Share feedback on this session",
       body: `How was tutoring with ${user.name}? A short review helps the next family choose.`,
-      href: "/dashboard/student?review=1",
+      href: "/dashboard/student/reviews",
       dedupeKey: `review-prompt:${booking.id}`,
     });
   }
@@ -294,13 +294,14 @@ export async function saveReview(formData: FormData) {
     where: { id: String(formData.get("bookingId")) },
     include: { tutor: { include: { user: true } }, review: true },
   });
-  if (!booking || booking.studentId !== user.studentProfile.id || booking.status !== "COMPLETED" || booking.review) {
-    redirect("/dashboard/student/calendar?error=Reviews are available after a completed session.");
+  const { canLeaveReview } = await import("@/lib/reviews");
+  if (!booking || booking.studentId !== user.studentProfile.id || !canLeaveReview(booking)) {
+    redirect("/dashboard/student/reviews?error=Reviews are available after your confirmed session ends.");
   }
   const rating = Number(formData.get("rating"));
   const comment = String(formData.get("comment") || "").trim();
   if (rating < 1 || rating > 5 || comment.length < 8) {
-    redirect("/dashboard/student/calendar?error=Add a rating and a short comment.");
+    redirect("/dashboard/student/reviews?error=Add a rating and a short comment.");
   }
   await db.review.create({
     data: {
@@ -313,10 +314,14 @@ export async function saveReview(formData: FormData) {
       published: true,
     },
   });
+  if (booking.status === "CONFIRMED") {
+    await db.booking.update({ where: { id: booking.id }, data: { status: "COMPLETED" } });
+  }
   const { revalidatePath, revalidateTag } = await import("next/cache");
   revalidateTag("home");
   revalidatePath(`/tutors/${booking.tutor.slug}`);
   revalidatePath("/tutors");
+  revalidatePath("/dashboard/student/reviews");
   redirect(`/tutors/${booking.tutor.slug}?reviewed=1`);
 }
 

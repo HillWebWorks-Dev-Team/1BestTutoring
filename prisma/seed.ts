@@ -233,7 +233,7 @@ async function main() {
     minutes: 15,
     rate: 0,
   });
-  const alexPast = await booking({
+  await booking({
     studentId: alex.id,
     tutorId: createdTutors["hannah-kim"].id,
     type: "SESSION",
@@ -276,82 +276,7 @@ async function main() {
     },
   });
   const jordanUser = await prisma.user.findUniqueOrThrow({ where: { email: "jordan@onepercentbetter.com" } });
-  const samUser = await prisma.user.findUniqueOrThrow({ where: { email: "sam@onepercentbetter.com" } });
-  const alexUser = await prisma.user.findUniqueOrThrow({ where: { email: "alex@onepercentbetter.com" } });
-  const samSession = await prisma.booking.findFirst({
-    where: { studentId: sam.id, tutorId: createdTutors["sofia-alvarez"].id, type: "SESSION", status: "COMPLETED" },
-    orderBy: { startsAt: "desc" },
-  });
-  const omarSession = await prisma.booking.findFirst({
-    where: { studentId: jordan.id, tutorId: createdTutors["omar-hassan"].id, type: "SESSION", status: "COMPLETED" },
-    orderBy: { startsAt: "desc" },
-  });
-  const mayaHistory = await prisma.booking.findFirst({
-    where: {
-      studentId: jordan.id,
-      tutorId: createdTutors["maya-chen"].id,
-      type: "SESSION",
-      status: "COMPLETED",
-      id: { not: past.id },
-    },
-    orderBy: { startsAt: "asc" },
-  });
-  await prisma.review.create({
-    data: {
-      bookingId: past.id,
-      tutorId: createdTutors["maya-chen"].id,
-      authorId: jordanUser.id,
-      rating: 5,
-      comment: "Maya makes calculus feel like a conversation instead of a performance. I left knowing exactly what to practice.",
-      verified: true,
-    },
-  });
-  if (mayaHistory) {
-    await prisma.review.create({
-      data: {
-        bookingId: mayaHistory.id,
-        tutorId: createdTutors["maya-chen"].id,
-        authorId: jordanUser.id,
-        rating: 5,
-        comment: "Clear setups for related rates. I finally stopped guessing which variable to differentiate.",
-        verified: true,
-      },
-    });
-  }
-  if (omarSession) {
-    await prisma.review.create({
-      data: {
-        bookingId: omarSession.id,
-        tutorId: createdTutors["omar-hassan"].id,
-        authorId: jordanUser.id,
-        rating: 5,
-        comment: "Omar treats timed sections like a craft. My pacing on microeconomics sets is calmer now.",
-        verified: true,
-      },
-    });
-  }
-  if (samSession) {
-    await prisma.review.create({
-      data: {
-        bookingId: samSession.id,
-        tutorId: createdTutors["sofia-alvarez"].id,
-        authorId: samUser.id,
-        rating: 5,
-        comment: "Sofia explains algebra without rushing. I can check my own work now instead of waiting for an answer key.",
-        verified: true,
-      },
-    });
-  }
-  await prisma.review.create({
-    data: {
-      bookingId: alexPast.id,
-      tutorId: createdTutors["hannah-kim"].id,
-      authorId: alexUser.id,
-      rating: 5,
-      comment: "Hannah walks through algorithms the way a good TA does — one example, then I drive. Debugging feels less scary.",
-      verified: true,
-    },
-  });
+  // No seeded/demo reviews — homepage and profiles only show real student feedback.
   await prisma.progressNote.create({
     data: {
       studentId: jordan.id,

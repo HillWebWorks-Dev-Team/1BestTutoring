@@ -83,7 +83,6 @@ function pageLabelFromPath(pathname: string) {
   const parts = pathname.split("/").filter(Boolean);
   if (!parts.length) return "Home";
 
-  // Prefer the most specific known segment from the end (skip dynamic ids).
   for (let i = parts.length - 1; i >= 0; i--) {
     const part = parts[i];
     if (/^[0-9a-f-]{8,}$/i.test(part) || part.length > 40) continue;
@@ -114,10 +113,34 @@ export function NavigationProgress() {
   const searchParams = useSearchParams();
   const [modal, setModal] = useState<LoadingModal | null>(null);
   const [progress, setProgress] = useState(0);
+  const pendingRef = useRef(false);
   const hideTimer = useRef<number | null>(null);
+  const safetyTimer = useRef<number | null>(null);
   const stepTimers = useRef<number[]>([]);
   const progressTimers = useRef<number[]>([]);
   const key = `${pathname}?${searchParams.toString()}`;
+
+  function clearTimers() {
+    if (hideTimer.current) window.clearTimeout(hideTimer.current);
+    if (safetyTimer.current) window.clearTimeout(safetyTimer.current);
+    stepTimers.current.forEach((timer) => window.clearTimeout(timer));
+    progressTimers.current.forEach((timer) => window.clearTimeout(timer));
+    hideTimer.current = null;
+    safetyTimer.current = null;
+    stepTimers.current = [];
+    progressTimers.current = [];
+  }
+
+  function finishLoading() {
+    pendingRef.current = false;
+    clearTimers();
+    setProgress(100);
+    hideTimer.current = window.setTimeout(() => {
+      setModal(null);
+      setProgress(0);
+      document.body.style.overflow = "";
+    }, 180);
+  }
 
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
@@ -139,11 +162,8 @@ export function NavigationProgress() {
       if (url.origin !== window.location.origin) return;
       if (url.pathname === window.location.pathname && url.search === window.location.search) return;
 
-      if (hideTimer.current) window.clearTimeout(hideTimer.current);
-      stepTimers.current.forEach((timer) => window.clearTimeout(timer));
-      progressTimers.current.forEach((timer) => window.clearTimeout(timer));
-      stepTimers.current = [];
-      progressTimers.current = [];
+      clearTimers();
+      pendingRef.current = true;
 
       const copy = isBookingPath(url) ? bookingCopy(url) : generalCopy(url);
       setModal({ ...copy, step: 0 });
@@ -162,27 +182,29 @@ export function NavigationProgress() {
           window.setTimeout(() => setModal((current) => (current ? { ...current, step: 2 } : current)), 1400),
         ];
       }
+
+      // Never leave the modal stuck if the route hangs or finishes before state commits.
+      safetyTimer.current = window.setTimeout(() => finishLoading(), 6_000);
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && pendingRef.current) finishLoading();
     };
 
     document.addEventListener("click", onClick, true);
-    return () => document.removeEventListener("click", onClick, true);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("click", onClick, true);
+      document.removeEventListener("keydown", onKeyDown);
+      clearTimers();
+      document.body.style.overflow = "";
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (!modal) return;
-    setProgress(100);
-    stepTimers.current.forEach((timer) => window.clearTimeout(timer));
-    progressTimers.current.forEach((timer) => window.clearTimeout(timer));
-    stepTimers.current = [];
-    progressTimers.current = [];
-    hideTimer.current = window.setTimeout(() => {
-      setModal(null);
-      setProgress(0);
-      document.body.style.overflow = "";
-    }, 220);
-    return () => {
-      if (hideTimer.current) window.clearTimeout(hideTimer.current);
-    };
+    if (!pendingRef.current) return;
+    finishLoading();
     // Complete when the destination route finishes rendering.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
@@ -253,6 +275,10 @@ export function NavigationProgress() {
             })}
           </ol>
         ) : null}
+
+        <button type="button" className="btn btn-line mt-5 w-full whitespace-nowrap" onClick={finishLoading}>
+          Continue
+        </button>
       </div>
     </div>
   );

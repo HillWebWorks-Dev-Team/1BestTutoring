@@ -6,8 +6,8 @@ import styles from "./HomeHero.module.css";
 
 async function HeroReview() {
   const { reviews, tutors } = await getHomePayload();
-  const review = reviews.find((item) => item.comment.trim());
-  if (!review) return null;
+  const published = reviews.find((item) => item.comment.trim());
+  if (!published) return null;
 
   const portraits = tutors
     .map((tutor) => ({
@@ -27,14 +27,14 @@ async function HeroReview() {
           ))}
         </div>
       ) : null}
-      <blockquote>“{review.comment}”</blockquote>
-      <p className={styles.stars} aria-label={`${review.rating} out of 5 stars`}>
-        {"★".repeat(Math.max(1, Math.min(5, review.rating)))}
-        {review.rating < 5 ? "☆".repeat(5 - review.rating) : null}
+      <blockquote>“{published.comment}”</blockquote>
+      <p className={styles.stars} aria-label={`${published.rating} out of 5 stars`}>
+        {"★".repeat(Math.max(1, Math.min(5, published.rating)))}
+        {published.rating < 5 ? "☆".repeat(5 - published.rating) : null}
       </p>
       <figcaption>
-        <strong>{review.author.name}</strong>
-        <span>Student · session with {review.tutor.user.name}</span>
+        <strong>{published.author.name}</strong>
+        <span>Student · session with {published.tutor.user.name}</span>
       </figcaption>
     </figure>
   );

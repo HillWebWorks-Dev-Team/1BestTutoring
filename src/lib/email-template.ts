@@ -133,6 +133,7 @@ export function renderBrandedEmail(input: {
 export function emailCtaLabel(href?: string) {
   if (!href) return "Open dashboard";
   if (href.includes("/application")) return "View application";
+  if (href.includes("/reviews")) return "Leave a review";
   if (href.includes("/bookings")) return "View booking";
   if (href.includes("/calendar")) return "Open calendar";
   if (href.includes("/billing") || href.includes("/payments")) return "View billing";

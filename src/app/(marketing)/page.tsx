@@ -73,9 +73,8 @@ function SectionSkeleton({ className = "h-48" }: { className?: string }) {
   return <div className={`animate-pulse bg-line/50 ${className}`} aria-hidden />;
 }
 
-async function HomeUniversities() {
-  const { schools } = await getHomePayload();
-  return <UniversityShowcase schools={schools} />;
+function HomeUniversities() {
+  return <UniversityShowcase />;
 }
 
 async function FeaturedTutors() {
@@ -103,9 +102,7 @@ export default function HomePage() {
     <div>
       <HomeHero />
 
-      <Suspense fallback={<SectionSkeleton className="h-64" />}>
-        <HomeUniversities />
-      </Suspense>
+      <HomeUniversities />
 
       <section className="border-y border-line bg-white py-16">
         <div className="shell text-center">

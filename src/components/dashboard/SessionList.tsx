@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cancelBooking } from "@/server/booking";
 import { saveReport, saveReview } from "@/server/learning";
 import { formatWhen, money } from "@/lib/format";
+import { canLeaveReview } from "@/lib/reviews";
 
 export type SessionItem = {
   id: string;
@@ -114,15 +115,23 @@ export function SessionList({
               </details>
             ) : null}
 
-            {role === "STUDENT" && item.status === "COMPLETED" && item.type === "SESSION" && item.hasReview ? (
+            {role === "STUDENT" && item.type === "SESSION" && item.hasReview ? (
               <p className="mt-3 border-t border-line pt-3 text-sm text-mute">Thanks — your review is published.</p>
             ) : null}
 
-            {role === "STUDENT" && item.status === "COMPLETED" && item.type === "SESSION" && !item.hasReview ? (
+            {role === "STUDENT" &&
+            canLeaveReview({
+              type: item.type,
+              status: item.status,
+              endsAt: item.endsAt,
+              review: item.hasReview ? { id: true } : null,
+            }) ? (
               <form action={saveReview} className="mt-3 grid gap-3 border-t border-line pt-3">
                 <div>
                   <p className="text-sm font-semibold text-navy">Share feedback</p>
-                  <p className="mt-1 text-xs text-mute">Help the next family decide. Reviews appear on the tutor’s public profile.</p>
+                  <p className="mt-1 text-xs text-mute">
+                    Your confirmed session has ended. Reviews appear on the tutor’s public profile.
+                  </p>
                 </div>
                 <input type="hidden" name="bookingId" value={item.id} />
                 <label className="label" htmlFor={`rating-${item.id}`}>

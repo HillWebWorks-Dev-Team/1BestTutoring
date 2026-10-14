@@ -49,6 +49,7 @@ function linksFor(role: string, pendingTutor: boolean, unreadMessages = 0): Dash
     { href: "/dashboard/student", label: "Overview" },
     { href: "/dashboard/student/tutors", label: "My tutors" },
     { href: "/dashboard/student/calendar", label: "Calendar" },
+    { href: "/dashboard/student/reviews", label: "Reviews" },
     { href: "/dashboard/student/messages", label: "Messages", badge: unreadMessages || undefined },
     { href: "/dashboard/student/homework", label: "Homework" },
     { href: "/dashboard/student/progress", label: "Learning progress" },

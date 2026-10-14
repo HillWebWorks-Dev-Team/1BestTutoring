@@ -22,26 +22,13 @@ function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T
 async function loadHomePayload() {
   const empty = {
     tutors: [] as Awaited<ReturnType<typeof fetchTutors>>,
-    schools: [] as string[],
     reviews: [] as Awaited<ReturnType<typeof fetchReviews>>,
   };
 
   return withTimeout(
     (async () => {
-      const [tutors, schoolRows, reviews] = await Promise.all([
-        fetchTutors(),
-        prisma.tutorProfile.findMany({
-          where: approved,
-          select: { university: true },
-          distinct: ["university"],
-        }),
-        fetchReviews(),
-      ]);
-      return {
-        tutors,
-        schools: schoolRows.map((row) => row.university),
-        reviews,
-      };
+      const [tutors, reviews] = await Promise.all([fetchTutors(), fetchReviews()]);
+      return { tutors, reviews };
     })(),
     8_000,
     empty,
@@ -86,7 +73,7 @@ function fetchReviews() {
   });
 }
 
-const cachedHomePayload = unstable_cache(loadHomePayload, ["home-payload-v1"], {
+const cachedHomePayload = unstable_cache(loadHomePayload, ["home-payload-v2"], {
   revalidate: 60,
   tags: ["home"],
 });
