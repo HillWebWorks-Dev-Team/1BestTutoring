@@ -12,9 +12,20 @@ export const dynamic = "force-dynamic";
 export default async function TutorsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; subject?: string; university?: string; grade?: string; max?: string; open?: string; sort?: string; page?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    subject?: string;
+    university?: string;
+    grade?: string;
+    max?: string;
+    open?: string;
+    sort?: string;
+    page?: string;
+    studentId?: string;
+  }>;
 }) {
   const params = await searchParams;
+  const studentId = params.studentId?.trim() || undefined;
   const page = Math.max(1, Number(params.page || 1));
   const where = {
     status: "APPROVED",
@@ -49,7 +60,19 @@ export default async function TutorsPage({
   const [tutors, total] = await Promise.all([
     db.tutorProfile.findMany({
       where,
-      include: { user: true, reviews: { where: { published: true }, select: { rating: true } } },
+      select: {
+        id: true,
+        slug: true,
+        university: true,
+        major: true,
+        graduationYear: true,
+        subjects: true,
+        gradeLevels: true,
+        hourlyRateCents: true,
+        verified: true,
+        user: { select: { name: true, imageUrl: true } },
+        reviews: { where: { published: true }, select: { rating: true } },
+      },
       orderBy,
       skip: (page - 1) * 12,
       take: 12,
@@ -62,53 +85,59 @@ export default async function TutorsPage({
   return (
     <div>
       <section className="bg-deep text-ivory">
-        <div className="mx-auto max-w-6xl px-5 py-12">
+        <div className="shell py-14 md:py-16">
           <p className="kicker">Tutor directory</p>
           <h1 className="display mt-3 max-w-3xl text-5xl text-ivory md:text-6xl">Find your tutor.</h1>
-          <p className="mt-4 max-w-2xl text-ivory/70">
-            Approved, verified tutors only. Search by name, university, or subject, then book a free 15-minute consultation from any profile.
+          <p className="mt-4 max-w-2xl text-base leading-7 text-ivory/70">
+            Approved, verified tutors only. Search by name, university, or subject, then book a free 15-minute
+            consultation from any profile.
           </p>
         </div>
       </section>
-      <div className="mx-auto grid max-w-6xl gap-8 px-5 py-10 lg:grid-cols-[260px_1fr]">
-        <details className="card p-4 lg:hidden">
-          <summary className="cursor-pointer font-medium">Filters</summary>
-          <div className="mt-4">
-            <FilterForm params={params} idPrefix="mobile" />
-          </div>
-        </details>
-        <aside className="hidden lg:block">
-          <div className="card sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto p-4">
-            <p className="text-sm font-semibold">Filters</p>
+
+      <section className="bg-ivory py-10">
+        <div className="shell grid gap-8 lg:grid-cols-[260px_1fr]">
+          <details className="border border-line bg-white p-4 lg:hidden">
+            <summary className="cursor-pointer font-medium text-navy">Filters</summary>
             <div className="mt-4">
-              <FilterForm params={params} idPrefix="desktop" />
+              <FilterForm params={params} idPrefix="mobile" />
+            </div>
+          </details>
+
+          <aside className="hidden lg:block">
+            <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto border border-line bg-white p-5">
+              <p className="font-serif text-2xl text-navy">Filters</p>
+              <div className="mt-4">
+                <FilterForm params={params} idPrefix="desktop" />
+              </div>
+            </div>
+          </aside>
+
+          <div>
+            <p className="text-sm text-mute">
+              {total} tutor{total === 1 ? "" : "s"}
+            </p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {tutors.map((tutor) => (
+                <TutorCard key={tutor.id} tutor={toTutorCard(tutor)} studentId={studentId} />
+              ))}
+            </div>
+            {!tutors.length ? <p className="mt-8 text-mute">No tutors match those filters yet.</p> : null}
+            <div className="mt-8 flex gap-3">
+              {page > 1 ? (
+                <Link className="btn btn-line" href={`/tutors?${new URLSearchParams({ ...query, page: String(page - 1) })}`}>
+                  Previous
+                </Link>
+              ) : null}
+              {page < pages ? (
+                <Link className="btn btn-line" href={`/tutors?${new URLSearchParams({ ...query, page: String(page + 1) })}`}>
+                  Next
+                </Link>
+              ) : null}
             </div>
           </div>
-        </aside>
-        <div>
-          <p className="text-sm text-mute">
-            {total} tutor{total === 1 ? "" : "s"}
-          </p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {tutors.map((tutor) => (
-              <TutorCard key={tutor.id} tutor={toTutorCard(tutor)} />
-            ))}
-          </div>
-          {!tutors.length ? <p className="mt-8 text-mute">No tutors match those filters yet.</p> : null}
-          <div className="mt-8 flex gap-3">
-            {page > 1 ? (
-              <Link className="btn btn-line" href={`/tutors?${new URLSearchParams({ ...query, page: String(page - 1) })}`}>
-                Previous
-              </Link>
-            ) : null}
-            {page < pages ? (
-              <Link className="btn btn-line" href={`/tutors?${new URLSearchParams({ ...query, page: String(page + 1) })}`}>
-                Next
-              </Link>
-            ) : null}
-          </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
@@ -117,12 +146,22 @@ function FilterForm({
   params,
   idPrefix,
 }: {
-  params: { q?: string; subject?: string; university?: string; grade?: string; max?: string; open?: string; sort?: string };
+  params: {
+    q?: string;
+    subject?: string;
+    university?: string;
+    grade?: string;
+    max?: string;
+    open?: string;
+    sort?: string;
+    studentId?: string;
+  };
   idPrefix: string;
 }) {
   const fieldId = (name: string) => `${idPrefix}-${name}`;
   return (
     <form className="grid gap-3" action="/tutors">
+      {params.studentId ? <input type="hidden" name="studentId" value={params.studentId} /> : null}
       <div>
         <label className="label" htmlFor={fieldId("q")}>
           Search
@@ -193,5 +232,7 @@ function FilterForm({
 }
 
 function clean(params: Record<string, string | undefined>) {
-  return Object.fromEntries(Object.entries(params).filter((entry): entry is [string, string] => Boolean(entry[1]) && entry[0] !== "page"));
+  return Object.fromEntries(
+    Object.entries(params).filter((entry): entry is [string, string] => Boolean(entry[1]) && entry[0] !== "page"),
+  );
 }

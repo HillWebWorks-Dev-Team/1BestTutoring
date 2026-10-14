@@ -46,10 +46,11 @@ model StudentProfile {
   subjectsNeeded String  @default("")
   guardianEmail  String?
   isMinor        Boolean @default(false)
-  referralCode   String  @unique
-  referredByCode String?
-  parentId       String?
-  parent         ParentProfile? @relation(fields: [parentId], references: [id])
+  referralCode       String  @unique
+  referredByCode     String?
+  creditBalanceCents Int     @default(0)
+  parentId           String?
+  parent             ParentProfile? @relation(fields: [parentId], references: [id])
 
   bookings    Booking[]
   assignments Assignment[]
@@ -150,6 +151,7 @@ model Booking {
   priceCents             Int            @default(0)
   tutorShareCents        Int            @default(0)
   platformShareCents     Int            @default(0)
+  creditAppliedCents     Int            @default(0)
   commissionPercent      Int            @default(0)
   zoomJoinUrl            String?
   zoomStartUrl           String?
@@ -375,23 +377,40 @@ model SafetyReport {
 }
 
 model PlatformSettings {
-  id                  String @id @default("default")
-  commissionPercent   Int    @default(30)
-  minHourlyRateCents  Int    @default(2500)
-  maxHourlyRateCents  Int    @default(30000)
-  feePolicy           String @default("PLATFORM_ABSORBS")
-  consultationMinutes Int    @default(15)
-  sessionMinutes      Int    @default(60)
-  cancelWindowHours   Int    @default(24)
+  id                         String @id @default("default")
+  commissionPercent          Int    @default(30)
+  minHourlyRateCents         Int    @default(2500)
+  maxHourlyRateCents         Int    @default(30000)
+  feePolicy                  String @default("PLATFORM_ABSORBS")
+  consultationMinutes        Int    @default(15)
+  sessionMinutes             Int    @default(60)
+  cancelWindowHours          Int    @default(24)
+  referralReferrerCreditCents Int   @default(1500)
+  referralRefereeCreditCents  Int   @default(1500)
 }
 
 model Referral {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   code           String
   referrerUserId String
   referredUserId String?
-  status         String   @default("SIGNED_UP")
-  createdAt      DateTime @default(now())
+  status         String    @default("SIGNED_UP")
+  rewardedAt     DateTime?
+  createdAt      DateTime  @default(now())
 
   @@index([code])
+  @@index([referredUserId, status])
+}
+
+model CreditLedger {
+  id         String   @id @default(cuid())
+  studentId  String
+  deltaCents Int
+  reason     String
+  referralId String?
+  bookingId  String?
+  note       String   @default("")
+  createdAt  DateTime @default(now())
+
+  @@index([studentId, createdAt])
 }

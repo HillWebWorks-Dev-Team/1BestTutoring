@@ -6,7 +6,7 @@ import { paymentsMode } from "@/lib/brand";
 import { pushGoogleEvent } from "@/lib/google";
 import { live, platformSettings } from "@/lib/live";
 import { notify } from "@/lib/notify";
-import { estimateProcessingFee, netPlatformEarnings, sessionPrice, splitAmount } from "@/lib/payments";
+import { applySessionCredit, estimateProcessingFee, netPlatformEarnings, sessionPrice, splitAmount } from "@/lib/payments";
 import { requireUser } from "@/lib/session";
 import { buildSlots } from "@/lib/slots";
 import { createSessionCheckout, refundConnectedPayment } from "@/lib/stripe";
@@ -168,6 +168,13 @@ export async function bookSlot(input: {
 
   const priceCents = input.type === "SESSION" ? sessionPrice(tutor.hourlyRateCents, duration) : 0;
   const split = splitAmount(priceCents, input.type === "SESSION" ? settings.commissionPercent : 0);
+  const studentRow = await db.studentProfile.findUnique({ where: { id: student.id } });
+  const priced = applySessionCredit({
+    priceCents,
+    platformShareCents: split.platformShareCents,
+    tutorShareCents: split.tutorShareCents,
+    creditBalanceCents: input.type === "SESSION" ? studentRow?.creditBalanceCents || 0 : 0,
+  });
   const mode = paymentsMode();
   const needsStripe = input.type === "SESSION" && mode === "stripe";
 
@@ -214,8 +221,9 @@ export async function bookSlot(input: {
           timezone: user.timezone,
           durationMin: duration,
           priceCents,
-          tutorShareCents: split.tutorShareCents,
-          platformShareCents: split.platformShareCents,
+          tutorShareCents: priced.tutorShareCents,
+          platformShareCents: priced.platformShareCents,
+          creditAppliedCents: priced.creditCents,
           commissionPercent: input.type === "SESSION" ? settings.commissionPercent : 0,
         },
       });
@@ -231,8 +239,8 @@ export async function bookSlot(input: {
       }
       const session = await createSessionCheckout({
         bookingId: booking.id,
-        amountCents: priceCents,
-        platformShareCents: split.platformShareCents,
+        amountCents: priced.chargeCents,
+        platformShareCents: priced.platformShareCents,
         tutorName: tutor.user.name,
         durationMin: duration,
         studentEmail: user.email,
@@ -255,17 +263,28 @@ export async function bookSlot(input: {
     }
 
     if (input.type === "SESSION") {
-      const fee = estimateProcessingFee(priceCents);
+      const fee = estimateProcessingFee(priced.chargeCents);
       await db.transaction.create({
         data: {
           bookingId: booking.id,
-          amountCents: priceCents,
-          tutorShareCents: split.tutorShareCents,
-          platformShareCents: split.platformShareCents,
+          amountCents: priced.chargeCents,
+          tutorShareCents: priced.tutorShareCents,
+          platformShareCents: priced.platformShareCents,
           stripeFeeCents: fee,
-          netPlatformCents: netPlatformEarnings(split.platformShareCents, fee),
+          netPlatformCents: netPlatformEarnings(priced.platformShareCents, fee),
           status: "SUCCEEDED",
         },
+      });
+      const { debitBookingCredit, grantReferralRewards } = await import("@/lib/referrals");
+      await debitBookingCredit({
+        studentId: student.id,
+        bookingId: booking.id,
+        creditCents: priced.creditCents,
+      });
+      await grantReferralRewards({
+        studentId: student.id,
+        studentUserId: student.userId,
+        bookingId: booking.id,
       });
     }
 
@@ -296,6 +315,20 @@ export async function bookSlot(input: {
       body: `${studentUser.name} booked ${new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: tutor.user.timezone }).format(startsAt)}.`,
       href: `/dashboard/bookings/${booking.id}`,
     });
+    const parent = await db.parentProfile.findFirst({
+      where: { students: { some: { id: student.id } } },
+      include: { user: true },
+    });
+    if (parent && parent.userId !== user.id) {
+      await notify({
+        userId: parent.userId,
+        email: parent.user.email,
+        type: "BOOKING",
+        title: `${label} confirmed`,
+        body: `${studentUser.name} is booked with ${tutor.user.name}.`,
+        href: `/dashboard/bookings/${booking.id}`,
+      });
+    }
     revalidatePath("/dashboard");
     return { next: `/dashboard/bookings/${booking.id}` };
   } catch (error) {
@@ -356,8 +389,27 @@ async function reschedule(bookingId: string, actorId: string, startsAt: Date, en
     body: `${booking.student.user.name} moved a booking.`,
     href: "/dashboard/tutor/calendar",
   });
+  if (parentId && parentId !== actorId) {
+    const parentUser = await db.user.findUnique({ where: { id: parentId } });
+    if (parentUser) {
+      await notify({
+        userId: parentUser.id,
+        email: parentUser.email,
+        type: "BOOKING",
+        title: "Session rescheduled",
+        body: `${booking.student.user.name}'s time with ${booking.tutor.user.name} has moved.`,
+        href: "/dashboard/parent/calendar",
+      });
+    }
+  }
   revalidatePath("/dashboard");
-  return { next: "/dashboard/student/calendar?rescheduled=1" };
+  const next =
+    actorId === booking.tutor.userId
+      ? "/dashboard/tutor/calendar?rescheduled=1"
+      : actorId === parentId
+        ? "/dashboard/parent/calendar?rescheduled=1"
+        : "/dashboard/student/calendar?rescheduled=1";
+  return { next };
 }
 
 export async function cancelBooking(formData: FormData) {
@@ -379,15 +431,21 @@ export async function cancelBooking(formData: FormData) {
   const tutorSide = user.id === booking.tutor.userId || user.role === "ADMIN";
   const onTime = withinCancelWindow(booking.startsAt, settings.cancelWindowHours);
   if (booking.type === "SESSION" && booking.priceCents > 0 && !tutorSide && !onTime) {
-    const back = user.role === "TUTOR" ? "/dashboard/tutor/calendar" : "/dashboard/student/calendar";
+    const back =
+      user.role === "TUTOR" || user.role === "ADMIN"
+        ? "/dashboard/tutor/calendar"
+        : user.role === "PARENT"
+          ? "/dashboard/parent/calendar"
+          : "/dashboard/student/calendar";
     const { redirect } = await import("next/navigation");
     redirect(`${back}?error=This session is inside the late-cancel window. Contact support and we’ll review a refund.`);
   }
 
+  const shouldRefund = Boolean(booking.transaction) && (tutorSide || onTime || booking.priceCents === 0);
   if (booking.transaction?.stripePaymentIntentId && (tutorSide || onTime)) {
     await refundConnectedPayment(booking.transaction.stripePaymentIntentId).catch(() => undefined);
   }
-  if (booking.transaction && (tutorSide || onTime || booking.priceCents === 0)) {
+  if (booking.transaction && shouldRefund) {
     await db.transaction.update({
       where: { id: booking.transaction.id },
       data: { status: "REFUNDED", refundedCents: booking.transaction.amountCents },
@@ -397,6 +455,14 @@ export async function cancelBooking(formData: FormData) {
     where: { id: booking.id },
     data: { status: "CANCELLED", cancelReason: reason },
   });
+  if (shouldRefund && booking.creditAppliedCents > 0) {
+    const { restoreBookingCredit } = await import("@/lib/referrals");
+    await restoreBookingCredit({
+      studentId: booking.studentId,
+      bookingId: booking.id,
+      creditCents: booking.creditAppliedCents,
+    });
+  }
   await notify({
     userId: booking.student.userId,
     email: booking.student.user.email,
@@ -413,7 +479,29 @@ export async function cancelBooking(formData: FormData) {
     body: `${booking.student.user.name}: ${reason}`,
     href: "/dashboard/tutor/calendar",
   });
+  const parentUserId = booking.student.parent?.userId;
+  if (parentUserId && parentUserId !== user.id) {
+    const parentUser = await db.user.findUnique({ where: { id: parentUserId } });
+    if (parentUser) {
+      await notify({
+        userId: parentUser.id,
+        email: parentUser.email,
+        type: "BOOKING",
+        title: "Booking cancelled",
+        body: `${booking.student.user.name}: ${reason}`,
+        href: "/dashboard/parent/calendar",
+      });
+    }
+  }
   revalidatePath("/dashboard");
+  const { redirect } = await import("next/navigation");
+  const back =
+    user.role === "TUTOR" || user.role === "ADMIN"
+      ? "/dashboard/tutor/calendar"
+      : user.role === "PARENT"
+        ? "/dashboard/parent/calendar"
+        : "/dashboard/student/calendar";
+  redirect(`${back}?cancelled=1`);
 }
 
 export async function requestTutor(formData: FormData) {

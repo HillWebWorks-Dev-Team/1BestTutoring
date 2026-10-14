@@ -246,6 +246,17 @@ export async function saveReport(formData: FormData) {
       }),
     ),
   );
+  if (booking.type === "SESSION") {
+    await notify({
+      userId: booking.student.userId,
+      email: booking.student.user.email,
+      type: "REVIEW",
+      title: "Share feedback on this session",
+      body: `How was tutoring with ${user.name}? A short review helps the next family choose.`,
+      href: "/dashboard/student?review=1",
+      dedupeKey: `review-prompt:${booking.id}`,
+    });
+  }
   redirect("/dashboard/tutor/calendar?reported=1");
 }
 
@@ -298,8 +309,13 @@ export async function saveReview(formData: FormData) {
       rating,
       comment,
       verified: true,
+      published: true,
     },
   });
+  const { revalidatePath, revalidateTag } = await import("next/cache");
+  revalidateTag("home");
+  revalidatePath(`/tutors/${booking.tutor.slug}`);
+  revalidatePath("/tutors");
   redirect(`/tutors/${booking.tutor.slug}?reviewed=1`);
 }
 
@@ -346,6 +362,35 @@ export async function linkChild(formData: FormData) {
     data: { parentId: user.parentProfile.id },
   });
   redirect("/dashboard/parent?linked=1");
+}
+
+export async function updateParentSettings(formData: FormData) {
+  const user = await requireUser();
+  if (user.role !== "PARENT" || !user.parentProfile) redirect("/dashboard");
+  const db = await live();
+  await db.user.update({
+    where: { id: user.id },
+    data: {
+      name: String(formData.get("name") || user.name),
+      phone: String(formData.get("phone") || "") || null,
+      timezone: String(formData.get("timezone") || user.timezone),
+    },
+  });
+  redirect("/dashboard/parent/settings?saved=1");
+}
+
+export async function updateChildGoals(formData: FormData) {
+  const user = await requireUser();
+  if (user.role !== "PARENT" || !user.parentProfile) redirect("/dashboard");
+  const studentId = String(formData.get("studentId") || "");
+  const linked = user.parentProfile.students.some((student) => student.id === studentId);
+  if (!linked) redirect("/dashboard/parent/progress?error=That student is not linked to your account.");
+  const db = await live();
+  await db.studentProfile.update({
+    where: { id: studentId },
+    data: { goals: String(formData.get("goals") || "").trim() },
+  });
+  redirect(`/dashboard/parent/progress?studentId=${encodeURIComponent(studentId)}&saved=1`);
 }
 
 export async function markNotificationsRead() {

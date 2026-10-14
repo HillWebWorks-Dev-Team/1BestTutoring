@@ -8,6 +8,28 @@ export function splitAmount(priceCents: number, commissionPercent: number) {
   return { platformShareCents, tutorShareCents };
 }
 
+/**
+ * Apply student referral credit as a platform subsidy.
+ * Never reduces tutor share — credit is capped at platform commission.
+ */
+export function applySessionCredit(options: {
+  priceCents: number;
+  platformShareCents: number;
+  tutorShareCents: number;
+  creditBalanceCents: number;
+}) {
+  const creditCents = Math.min(
+    Math.max(0, Math.round(options.creditBalanceCents)),
+    Math.max(0, Math.round(options.platformShareCents)),
+  );
+  return {
+    creditCents,
+    chargeCents: Math.max(0, Math.round(options.priceCents) - creditCents),
+    platformShareCents: Math.max(0, Math.round(options.platformShareCents) - creditCents),
+    tutorShareCents: Math.round(options.tutorShareCents),
+  };
+}
+
 /** Stripe's standard online card rate: 2.9% + 30¢. Actual fees are stored from webhooks when available. */
 export function estimateProcessingFee(amountCents: number) {
   if (amountCents <= 0) return 0;

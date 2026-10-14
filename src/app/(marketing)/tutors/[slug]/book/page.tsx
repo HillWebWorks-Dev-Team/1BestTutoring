@@ -5,7 +5,7 @@ import { BookingCalendar } from "@/components/booking/BookingCalendar";
 import { Portrait, UniversityMark } from "@/components/brand";
 import { canBookPaidSession, isPublicTutor } from "@/lib/access";
 import { paymentsMode } from "@/lib/brand";
-import { hourly } from "@/lib/format";
+import { hourly, money } from "@/lib/format";
 import { live, platformSettings } from "@/lib/live";
 import { tutorCanAcceptPayments } from "@/lib/access";
 import { portraitFor } from "@/lib/portraits";
@@ -35,10 +35,30 @@ export default async function BookPage({
       })
     : null;
   const settings = await platformSettings();
-  const studentId = query.studentId || viewer?.studentProfile?.id || viewer?.parentProfile?.students[0]?.id;
+  const linkedIds = new Set(viewer?.parentProfile?.students.map((s) => s.id) || []);
+  const studentId =
+    (query.studentId && (viewer?.studentProfile?.id === query.studentId || linkedIds.has(query.studentId))
+      ? query.studentId
+      : null) ||
+    viewer?.studentProfile?.id ||
+    viewer?.parentProfile?.students[0]?.id;
+  const bookQs = (kind: "consultation" | "session") => {
+    const params = new URLSearchParams({ type: kind });
+    if (studentId) params.set("studentId", studentId);
+    if (query.reschedule) params.set("reschedule", query.reschedule);
+    return `/tutors/${slug}/book?${params}`;
+  };
   const assignment = studentId
     ? await db.assignment.findUnique({ where: { studentId_tutorId: { studentId, tutorId: tutor.id } } })
     : null;
+  const bookingStudent = studentId
+    ? await db.studentProfile.findUnique({ where: { id: studentId }, select: { creditBalanceCents: true } })
+    : null;
+  const creditBalance = bookingStudent?.creditBalanceCents || 0;
+  const creditBalanceLabel =
+    type === "SESSION" && creditBalance > 0
+      ? `${money(creditBalance)} referral credit available — applied automatically at checkout (up to the platform fee; tutor rate stays the same).`
+      : undefined;
   const assigned = canBookPaidSession(assignment?.status === "ACTIVE");
   const payable = tutorCanAcceptPayments(tutor, paymentsMode());
   let lockedReason: string | undefined;
@@ -68,10 +88,10 @@ export default async function BookPage({
         </aside>
         <div>
           <div className="mb-4 flex flex-wrap gap-2">
-            <Link href={`/tutors/${slug}/book?type=consultation`} className={`btn ${type === "CONSULTATION" ? "btn-primary" : "btn-line"}`}>
+            <Link href={bookQs("consultation")} className={`btn ${type === "CONSULTATION" ? "btn-primary" : "btn-line"}`}>
               15 min · free
             </Link>
-            <Link href={`/tutors/${slug}/book?type=session`} className={`btn ${type === "SESSION" ? "btn-primary" : "btn-line"}`}>
+            <Link href={bookQs("session")} className={`btn ${type === "SESSION" ? "btn-primary" : "btn-line"}`}>
               {settings.sessionMinutes} min · {hourly(tutor.hourlyRateCents)}
             </Link>
           </div>
@@ -107,6 +127,7 @@ export default async function BookPage({
         rescheduleId={query.reschedule}
         studentId={studentId}
         lockedReason={lockedReason}
+        creditBalanceLabel={creditBalanceLabel}
       />
         </div>
       </div>

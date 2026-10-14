@@ -72,8 +72,15 @@ export default async function AdminHome() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <p className="kicker">Overview</p>
-      <h1 className="mt-2 font-serif text-5xl text-navy">The company, at a glance.</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="kicker">Overview</p>
+          <h1 className="mt-2 font-serif text-5xl text-navy">The company, at a glance.</h1>
+        </div>
+        <Link href="/dashboard/admin/analytics" className="btn btn-primary">
+          Open analytics
+        </Link>
+      </div>
       <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Stat label="Active tutors" value={String(tutors)} />
         <Stat label="Students" value={String(students)} />
@@ -88,17 +95,28 @@ export default async function AdminHome() {
         <Stat label="This month" value={money(monthRevenue)} />
       </div>
       <div className="mt-6 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-        <article className="card p-5">
-          <p className="kicker">Revenue</p>
-          <p className="mt-2 font-serif text-4xl text-navy">{money(revenue)}</p>
-          <p className="text-sm text-mute">
-            Platform net after estimated or recorded processing fees: {money(platform)}
-          </p>
-          <div className="mt-6 flex h-40 items-end gap-3">
+        <article className="card relative overflow-hidden p-5">
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-[radial-gradient(ellipse_at_top,_rgb(213_163_68_/_0.12),_transparent_70%)]"
+            aria-hidden
+          />
+          <div className="relative flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <p className="kicker">Revenue</p>
+              <p className="mt-2 font-serif text-4xl text-navy">{money(revenue)}</p>
+              <p className="text-sm text-mute">
+                Platform net after fees: {money(platform)}
+              </p>
+            </div>
+            <Link href="/dashboard/admin/analytics" className="text-sm font-medium text-navy underline-offset-2 hover:underline">
+              Full charts
+            </Link>
+          </div>
+          <div className="relative mt-6 flex h-40 items-end gap-3">
             {points.map(([label, value]) => (
               <div key={label} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
                 <div
-                  className="w-full rounded-t-xl bg-navy"
+                  className="w-full rounded-t-xl bg-gradient-to-t from-navy to-navy/80"
                   style={{ height: `${Math.max(value > 0 ? 12 : 4, (value / max) * 100)}%` }}
                   title={money(value)}
                 />

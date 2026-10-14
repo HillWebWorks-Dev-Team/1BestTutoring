@@ -4,13 +4,13 @@ import { universityFor } from "@/lib/universities";
 export function Logo({ light = false }: { light?: boolean }) {
   return (
     <span className="inline-flex items-center gap-2.5">
-      <span
-        className={`grid h-9 w-9 place-items-center rounded-full border font-serif text-[11px] ${
-          light ? "border-gold/50 text-gold" : "border-gold/60 bg-navy text-gold"
-        }`}
-      >
-        1%
-      </span>
+      <img
+        src="/logo.png"
+        alt=""
+        width={36}
+        height={36}
+        className="h-9 w-9 shrink-0 rounded-lg object-cover"
+      />
       <span>
         <span className={`block font-serif text-[1.15rem] leading-none tracking-tight ${light ? "text-ivory" : "text-navy"}`}>
           1% Better
@@ -67,9 +67,15 @@ export function UniversityMark({
   const school = universityFor(university);
   return (
     <span className="inline-flex items-center gap-2.5">
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-gold/45 bg-navy font-serif text-[10px] tracking-wide text-gold">
-        {school.mark}
-      </span>
+      {school.logo ? (
+        <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-line bg-white">
+          <img src={school.logo} alt="" className="h-6 w-6 object-contain" loading="lazy" decoding="async" />
+        </span>
+      ) : (
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-gold/45 bg-navy font-serif text-[10px] tracking-wide text-gold">
+          {school.mark}
+        </span>
+      )}
       {compact ? null : (
         <span className="min-w-0">
           <span className={`block truncate text-sm font-medium leading-tight ${light ? "text-ivory" : "text-navy"}`}>

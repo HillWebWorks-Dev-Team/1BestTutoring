@@ -8,9 +8,18 @@ const globalForPrisma = globalThis as unknown as {
   prismaSchemaVersion?: number;
 };
 
+function databaseUrl() {
+  const raw = process.env.DATABASE_URL || "";
+  if (!raw || raw.includes("connect_timeout=")) return raw || undefined;
+  const join = raw.includes("?") ? "&" : "?";
+  return `${raw}${join}connect_timeout=8&pool_timeout=8`;
+}
+
 function createPrisma() {
+  const url = databaseUrl();
   return new PrismaClient({
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+    ...(url ? { datasources: { db: { url } } } : {}),
   });
 }
 

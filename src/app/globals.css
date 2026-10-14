@@ -5,21 +5,21 @@
   --font-serif: var(--font-playfair), Georgia, "Times New Roman", serif;
   --font-script: var(--font-caveat), cursive;
 
-  --color-navy: #142a43;
-  --color-deep: #0b1d33;
-  --color-ivory: #f7f4ed;
-  --color-gold: #d9a441;
-  --color-gold-light: #eac477;
-  --color-slate: #64748b;
+  --color-navy: #0b2038;
+  --color-deep: #08192c;
+  --color-ivory: #f6f3ed;
+  --color-gold: #d5a344;
+  --color-gold-light: #bc8930;
+  --color-slate: #667587;
 
   --color-paper: #ffffff;
-  --color-ink: #142a43;
-  --color-mute: #64748b;
-  --color-line: #e8e2d8;
-  --color-cream: #f3ecdf;
-  --color-mist: #f7f4ed;
-  --color-pine: #0b1d33;
-  --shadow-card: 0 18px 40px -28px rgb(11 29 51 / 0.45);
+  --color-ink: #14263c;
+  --color-mute: #667587;
+  --color-line: #e5e8ec;
+  --color-cream: #f6f3ed;
+  --color-mist: #f6f3ed;
+  --color-pine: #08192c;
+  --shadow-card: 0 1px 2px rgb(8 25 44 / 0.04);
 }
 
 html {
@@ -34,8 +34,8 @@ body {
 }
 
 ::selection {
-  background: #eac477;
-  color: #0b1d33;
+  background: #e7d3a4;
+  color: #08192c;
 }
 
 :focus-visible {
@@ -44,33 +44,36 @@ body {
 }
 
 @layer components {
+  .shell {
+    width: 100%;
+    max-width: 1240px;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: 0.7rem;
-    padding: 0.72rem 1.15rem;
-    font-size: 0.9rem;
+    border-radius: 6px;
+    padding: 0.7rem 1.05rem;
+    font-size: 0.875rem;
     font-weight: 600;
     letter-spacing: -0.01em;
-    transition: transform 180ms ease, background 180ms ease, color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-  }
-  .btn:hover {
-    transform: translateY(-1px);
+    line-height: 1.2;
+    transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
   }
   .btn:disabled {
     opacity: 0.55;
-    transform: none;
     cursor: not-allowed;
   }
   .btn-primary {
     background: var(--color-gold);
     color: var(--color-deep);
-    box-shadow: 0 10px 24px -16px rgb(217 164 65 / 0.95);
   }
   .btn-primary:hover {
     background: var(--color-gold-light);
+    color: var(--color-deep);
   }
   .btn-light {
     background: var(--color-ivory);
@@ -124,7 +127,7 @@ body {
   .card {
     border: 1px solid var(--color-line);
     background: var(--color-paper);
-    border-radius: 1rem;
+    border-radius: 12px;
     box-shadow: var(--shadow-card);
   }
   .field {
@@ -184,8 +187,5 @@ body {
   .rise,
   .ivy-float-mark {
     animation: none;
-  }
-  .btn:hover {
-    transform: none;
   }
 }

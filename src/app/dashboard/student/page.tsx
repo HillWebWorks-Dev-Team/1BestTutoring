@@ -10,12 +10,16 @@ import { universityFor } from "@/lib/universities";
 
 export const dynamic = "force-dynamic";
 
-export default async function StudentHome({ searchParams }: { searchParams: Promise<{ requested?: string; error?: string }> }) {
+export default async function StudentHome({
+  searchParams,
+}: {
+  searchParams: Promise<{ requested?: string; error?: string; review?: string }>;
+}) {
   const query = await searchParams;
   const user = await requireUser();
   const db = await live();
   const studentId = user.studentProfile?.id || "";
-  const [assignments, bookings, homework, unread] = await Promise.all([
+  const [assignments, bookings, homework, unread, needsReview] = await Promise.all([
     db.assignment.findMany({
       where: { studentId, status: "ACTIVE" },
       include: { tutor: { include: { user: true } } },
@@ -34,6 +38,12 @@ export default async function StudentHome({ searchParams }: { searchParams: Prom
       take: 3,
     }),
     db.notification.count({ where: { userId: user.id, readAt: null } }),
+    db.booking.findMany({
+      where: { studentId, type: "SESSION", status: "COMPLETED", review: null },
+      include: { tutor: { include: { user: true } }, student: { include: { user: true } }, report: true, review: true },
+      orderBy: { startsAt: "desc" },
+      take: 5,
+    }),
   ]);
   const next = bookings.find((booking) => booking.status === "CONFIRMED");
   const later = bookings.filter((booking) => booking.id !== next?.id && booking.status === "CONFIRMED");
@@ -69,8 +79,32 @@ export default async function StudentHome({ searchParams }: { searchParams: Prom
       </div>
 
       <div className="mt-4">
-        <Notice success={query.requested ? "Request sent. We’ll confirm the match before tutoring begins." : undefined} error={query.error} />
+        <Notice
+          success={
+            query.requested
+              ? "Request sent. We’ll confirm the match before tutoring begins."
+              : query.review
+                ? "When you’re ready, leave a short review below."
+                : undefined
+          }
+          error={query.error}
+        />
       </div>
+
+      {needsReview.length ? (
+        <section className="mt-8" id="leave-review">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="font-serif text-2xl">Awaiting your review</h2>
+            <Link href="/dashboard/student/calendar" className="text-sm text-mute hover:text-navy">
+              Calendar
+            </Link>
+          </div>
+          <p className="mb-3 text-sm text-mute">
+            These sessions are complete. A quick review helps other families choose with confidence.
+          </p>
+          <SessionList items={needsReview.map(toItem)} role="STUDENT" timeZone={user.timezone} />
+        </section>
+      ) : null}
 
       <section className="mt-8">
         <div className="mb-3 flex items-center justify-between gap-3">

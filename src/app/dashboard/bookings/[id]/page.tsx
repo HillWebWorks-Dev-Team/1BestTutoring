@@ -154,9 +154,18 @@ export default async function BookingSummaryPage({
             <Row label="Duration" value={`${booking.durationMin} minutes`} />
             <Row label="Timezone" value={user.timezone.replaceAll("_", " ")} />
             <Row
-              label={booking.type === "CONSULTATION" ? "Price" : "Amount"}
+              label={booking.type === "CONSULTATION" ? "Price" : "Session rate"}
               value={booking.priceCents ? money(booking.priceCents) : "Free"}
             />
+            {booking.creditAppliedCents > 0 ? (
+              <Row label="Referral credit" value={`−${money(booking.creditAppliedCents)}`} />
+            ) : null}
+            {booking.type === "SESSION" && booking.priceCents > 0 ? (
+              <Row
+                label={pending ? "Due now" : "Charged"}
+                value={money(Math.max(0, booking.priceCents - booking.creditAppliedCents))}
+              />
+            ) : null}
             {booking.transaction ? <Row label="Payment" value={booking.transaction.status.toLowerCase()} /> : null}
           </dl>
 
@@ -204,7 +213,14 @@ export default async function BookingSummaryPage({
 
           {booking.type === "SESSION" && !isTutor && confirmed ? (
             <div className="mt-4 print:hidden">
-              <Link className="btn btn-line" href={`/dashboard/student/payments/${booking.id}`}>
+              <Link
+                className="btn btn-line"
+                href={
+                  user.role === "PARENT"
+                    ? `/dashboard/parent/billing/${booking.id}`
+                    : `/dashboard/student/payments/${booking.id}`
+                }
+              >
                 View payment receipt
               </Link>
             </div>

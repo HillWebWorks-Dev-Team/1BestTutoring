@@ -5,13 +5,13 @@ import { UNIVERSITY_DISCLAIMER } from "@/lib/universities";
 export function Footer() {
   return (
     <footer className="mt-0 bg-deep text-ivory">
-      <div className="mx-auto grid max-w-6xl gap-10 px-5 py-16 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+      <div className="shell grid gap-10 py-16 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
           <Logo light />
           <p className="mt-5 max-w-xs text-sm leading-6 text-ivory/70">
             Verified tutors from the Ivy League and other leading universities. Small steps, lasting academic progress.
           </p>
-          <Link href="/become-a-tutor" className="btn btn-primary mt-6">
+          <Link href="/become-a-tutor" className="mt-5 inline-block text-sm text-gold hover:text-ivory">
             Apply to tutor
           </Link>
         </div>
@@ -44,7 +44,7 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-6 text-xs leading-5 text-ivory/45 md:flex-row md:items-end md:justify-between">
+        <div className="shell flex flex-col gap-3 py-6 text-xs leading-5 text-ivory/45 md:flex-row md:items-end md:justify-between">
           <p className="max-w-3xl">{UNIVERSITY_DISCLAIMER}</p>
           <p className="shrink-0">© {new Date().getFullYear()} 1% Better Tutoring</p>
         </div>

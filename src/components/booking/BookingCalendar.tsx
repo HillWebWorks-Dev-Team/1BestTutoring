@@ -17,6 +17,7 @@ export function BookingCalendar({
   rescheduleId,
   studentId,
   lockedReason,
+  creditBalanceLabel,
 }: {
   slug: string;
   type: "CONSULTATION" | "SESSION";
@@ -26,6 +27,8 @@ export function BookingCalendar({
   rescheduleId?: string;
   studentId?: string;
   lockedReason?: string;
+  /** e.g. "$15.00 available — applied automatically at checkout (up to platform fee)" */
+  creditBalanceLabel?: string;
 }) {
   const [cursor, setCursor] = useState(() => DateTime.now().setZone(tutorTimeZone).startOf("month"));
   const [date, setDate] = useState<string | null>(null);
@@ -119,6 +122,11 @@ export function BookingCalendar({
       <div className="card flex flex-col p-5">
         <p className="kicker">{type === "CONSULTATION" ? "15 minutes · free" : priceLabel}</p>
         <h2 className="mt-2 font-serif text-3xl">{date ? DateTime.fromISO(date).toFormat("cccc, LLL d") : "Choose a date"}</h2>
+        {type === "SESSION" && creditBalanceLabel ? (
+          <p className="mt-3 rounded-xl border border-gold/35 bg-cream/40 px-3 py-2.5 text-sm leading-6 text-navy">
+            {creditBalanceLabel}
+          </p>
+        ) : null}
         {lockedReason ? (
           <p className="mt-4 rounded-xl border border-[#e7c7c2] bg-[#fbf1ef] px-3 py-3 text-sm leading-6 text-[#7d332c]">
             {lockedReason}

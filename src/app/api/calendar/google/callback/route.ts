@@ -19,11 +19,20 @@ export async function GET(request: Request) {
       grant_type: "authorization_code",
     }),
   });
-  if (!response.ok) return NextResponse.redirect(`${appUrl()}/dashboard?error=Google Calendar could not be connected.`);
+  const settingsPath =
+    session.role === "TUTOR"
+      ? "/dashboard/tutor/settings"
+      : session.role === "PARENT"
+        ? "/dashboard/parent/settings"
+        : "/dashboard/student/settings";
+  if (!response.ok) {
+    return NextResponse.redirect(
+      `${appUrl()}${settingsPath}?error=${encodeURIComponent("Google Calendar could not be connected.")}`,
+    );
+  }
   const json = (await response.json()) as { refresh_token?: string };
   if (json.refresh_token) {
     await prisma.user.update({ where: { id: session.uid }, data: { googleRefreshToken: json.refresh_token } });
   }
-  const next = session.role === "TUTOR" ? "/dashboard/tutor/calendar" : "/dashboard/student/calendar";
-  return NextResponse.redirect(`${appUrl()}${next}?calendar=connected`);
+  return NextResponse.redirect(`${appUrl()}${settingsPath}?calendar=connected`);
 }

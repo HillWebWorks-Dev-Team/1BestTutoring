@@ -3,13 +3,15 @@
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { resolveSelectOther } from "@/lib/apply-options";
 import { GRADE_LEVELS, SUBJECTS } from "@/lib/brand";
 import { slugify } from "@/lib/format";
 import { live, platformSettings } from "@/lib/live";
-import { notify, notifyAdmins } from "@/lib/notify";
+import { notifyAdmins } from "@/lib/notify";
 import { getSession, setSessionCookie } from "@/lib/session";
 
 const ALLOWED_FILES = ["application/pdf", "image/png", "image/jpeg", "image/webp", "text/plain"];
+const ALLOWED_PHOTOS = ["image/png", "image/jpeg", "image/webp"];
 
 async function saveDocument(userId: string, file: FormDataEntryValue | null, kind: string) {
   if (!(file instanceof File) || file.size === 0) return;
@@ -25,6 +27,26 @@ async function saveDocument(userId: string, file: FormDataEntryValue | null, kin
       data: Buffer.from(await file.arrayBuffer()),
     },
   });
+}
+
+async function saveProfilePhoto(userId: string, file: FormDataEntryValue | null, required: boolean) {
+  if (!(file instanceof File) || file.size === 0) {
+    if (required) throw new Error("Add a profile photo before submitting.");
+    return;
+  }
+  if (file.size > 4 * 1024 * 1024) throw new Error("Profile photo must be 4MB or smaller.");
+  if (!ALLOWED_PHOTOS.includes(file.type)) throw new Error("Profile photo must be a PNG, JPG, or WebP image.");
+  const db = await live();
+  const doc = await db.document.create({
+    data: {
+      userId,
+      kind: "PROFILE_PHOTO",
+      fileName: file.name.slice(0, 140),
+      mimeType: file.type,
+      data: Buffer.from(await file.arrayBuffer()),
+    },
+  });
+  await db.user.update({ where: { id: userId }, data: { imageUrl: `/api/media/${doc.id}` } });
 }
 
 export async function submitContact(_state: { error?: string; ok?: boolean } | null, formData: FormData) {
@@ -56,8 +78,25 @@ export async function submitContact(_state: { error?: string; ok?: boolean } | n
 export async function applyAsTutor(_state: { error?: string } | null, formData: FormData) {
   const subjects = formData.getAll("subjects").map(String);
   const gradeLevels = formData.getAll("gradeLevels").map(String);
-  const universityChoice = String(formData.get("university") || "");
-  const university = universityChoice === "Other" ? String(formData.get("universityOther") || "") : universityChoice;
+  const university = resolveSelectOther(String(formData.get("university") || ""), String(formData.get("universityOther") || ""));
+  const major = resolveSelectOther(String(formData.get("major") || ""), String(formData.get("majorOther") || ""));
+  const degree = resolveSelectOther(String(formData.get("degree") || ""), String(formData.get("degreeOther") || ""));
+  const graduationYearRaw = resolveSelectOther(
+    String(formData.get("graduationYear") || ""),
+    String(formData.get("graduationYearOther") || ""),
+  );
+  const hourlyRateRaw = resolveSelectOther(String(formData.get("hourlyRate") || ""), String(formData.get("hourlyRateOther") || ""));
+  const experience = resolveSelectOther(String(formData.get("experience") || ""), String(formData.get("experienceOther") || ""));
+  const education = resolveSelectOther(String(formData.get("education") || ""), String(formData.get("educationOther") || ""));
+  const achievements = resolveSelectOther(
+    String(formData.get("achievements") || ""),
+    String(formData.get("achievementsOther") || ""),
+  );
+  const certifications = resolveSelectOther(
+    String(formData.get("certifications") || ""),
+    String(formData.get("certificationsOther") || ""),
+  );
+  const testScores = resolveSelectOther(String(formData.get("testScores") || ""), String(formData.get("testScoresOther") || ""));
 
   const parsed = z
     .object({
@@ -65,12 +104,12 @@ export async function applyAsTutor(_state: { error?: string } | null, formData: 
       email: z.string().trim().email("Enter a valid email."),
       password: z.string().optional(),
       university: z.string().trim().min(2, "Choose your university."),
-      major: z.string().trim().min(2, "Enter your major."),
-      degree: z.string().trim().min(2, "Enter your degree."),
+      major: z.string().trim().min(2, "Choose your major."),
+      degree: z.string().trim().min(2, "Choose your degree."),
       graduationYear: z.coerce.number().min(1970).max(2045),
       bio: z.string().trim().min(40, "Write a short biography of at least a few sentences."),
-      experience: z.string().trim().min(20, "Tell us about your tutoring or teaching experience."),
-      education: z.string().optional(),
+      experience: z.string().trim().min(2, "Choose your tutoring or teaching experience."),
+      education: z.string().trim().min(2, "Choose your educational background."),
       achievements: z.string().optional(),
       certifications: z.string().optional(),
       testScores: z.string().optional(),
@@ -84,16 +123,16 @@ export async function applyAsTutor(_state: { error?: string } | null, formData: 
       email: formData.get("email"),
       password: formData.get("password") || undefined,
       university,
-      major: formData.get("major"),
-      degree: formData.get("degree"),
-      graduationYear: formData.get("graduationYear"),
+      major,
+      degree,
+      graduationYear: graduationYearRaw,
       bio: formData.get("bio"),
-      experience: formData.get("experience"),
-      education: formData.get("education"),
-      achievements: formData.get("achievements"),
-      certifications: formData.get("certifications"),
-      testScores: formData.get("testScores"),
-      hourlyRate: formData.get("hourlyRate"),
+      experience,
+      education,
+      achievements,
+      certifications,
+      testScores,
+      hourlyRate: hourlyRateRaw,
       availabilityNotes: formData.get("availabilityNotes"),
       introVideoUrl: formData.get("introVideoUrl"),
       linkedinUrl: formData.get("linkedinUrl"),
@@ -135,6 +174,7 @@ export async function applyAsTutor(_state: { error?: string } | null, formData: 
           verified: false,
         },
       });
+      await saveProfilePhoto(current.id, formData.get("photo"), !current.imageUrl);
       await saveDocument(current.id, formData.get("resume"), "RESUME");
       await saveDocument(current.id, formData.get("credentials"), "CREDENTIAL");
       await saveDocument(current.id, formData.get("proof"), "ENROLLMENT_PROOF");
@@ -174,6 +214,7 @@ export async function applyAsTutor(_state: { error?: string } | null, formData: 
         },
       },
     });
+    await saveProfilePhoto(user.id, formData.get("photo"), true);
     await saveDocument(user.id, formData.get("resume"), "RESUME");
     await saveDocument(user.id, formData.get("credentials"), "CREDENTIAL");
     await saveDocument(user.id, formData.get("proof"), "ENROLLMENT_PROOF");

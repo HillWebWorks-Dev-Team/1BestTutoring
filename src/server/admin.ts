@@ -178,6 +178,8 @@ export async function updatePlatformSettings(formData: FormData) {
   }
   const current = await platformSettings();
   const db = await live();
+  const referralReferrerCreditCents = Math.max(0, Math.round(Number(formData.get("referrerCredit") || 0) * 100));
+  const referralRefereeCreditCents = Math.max(0, Math.round(Number(formData.get("refereeCredit") || 0) * 100));
   await db.platformSettings.update({
     where: { id: current.id },
     data: {
@@ -187,6 +189,8 @@ export async function updatePlatformSettings(formData: FormData) {
       consultationMinutes: Number(formData.get("consultationMinutes") || 15),
       sessionMinutes: Number(formData.get("sessionMinutes") || 60),
       cancelWindowHours: Number(formData.get("cancelWindowHours") || 24),
+      referralReferrerCreditCents,
+      referralRefereeCreditCents,
     },
   });
   redirect("/dashboard/admin/settings?saved=1");
@@ -211,6 +215,14 @@ export async function adminRefund(formData: FormData) {
     where: { id: booking.id },
     data: { status: "REFUNDED", cancelReason: String(formData.get("reason") || "Refunded by admin") },
   });
+  if (booking.creditAppliedCents > 0) {
+    const { restoreBookingCredit } = await import("@/lib/referrals");
+    await restoreBookingCredit({
+      studentId: booking.studentId,
+      bookingId: booking.id,
+      creditCents: booking.creditAppliedCents,
+    });
+  }
   await notify({
     userId: booking.student.userId,
     email: booking.student.user.email,
@@ -262,4 +274,20 @@ export async function saveAdminTutorNotes(formData: FormData) {
     data: { adminNotes: String(formData.get("adminNotes") || "") },
   });
   redirect("/dashboard/admin/tutors?updated=1");
+}
+
+export async function setReviewPublished(formData: FormData) {
+  await requireRole(["ADMIN"]);
+  const db = await live();
+  const reviewId = String(formData.get("reviewId") || "");
+  const published = String(formData.get("published") || "") === "1";
+  if (!reviewId) redirect("/dashboard/admin/reviews?error=Choose a review.");
+  await db.review.update({
+    where: { id: reviewId },
+    data: { published },
+  });
+  const { revalidatePath, revalidateTag } = await import("next/cache");
+  revalidateTag("home");
+  revalidatePath("/tutors");
+  redirect(`/dashboard/admin/reviews?${published ? "published" : "hidden"}=1`);
 }

@@ -15,7 +15,9 @@ function linksFor(role: string, pendingTutor: boolean, unreadMessages = 0): Dash
       { href: "/dashboard/admin/assignments", label: "Assignments" },
       { href: "/dashboard/admin/bookings", label: "Sessions" },
       { href: "/dashboard/admin/finance", label: "Payments" },
+      { href: "/dashboard/admin/analytics", label: "Analytics" },
       { href: "/dashboard/admin/inbox", label: "Inbox" },
+      { href: "/dashboard/admin/reviews", label: "Reviews" },
       { href: "/dashboard/admin/safety", label: "Safety" },
       { href: "/dashboard/admin/settings", label: "Settings" },
     ];
@@ -31,6 +33,7 @@ function linksFor(role: string, pendingTutor: boolean, unreadMessages = 0): Dash
       { href: "/dashboard/tutor/earnings", label: "Earnings", locked: pendingTutor },
       { href: "/dashboard/tutor/availability", label: "Availability", locked: pendingTutor },
       { href: "/dashboard/tutor/profile", label: "Profile", locked: pendingTutor },
+      { href: "/dashboard/tutor/settings", label: "Settings" },
     ];
   }
   if (role === "PARENT") {
@@ -39,6 +42,7 @@ function linksFor(role: string, pendingTutor: boolean, unreadMessages = 0): Dash
       { href: "/dashboard/parent/calendar", label: "Calendar" },
       { href: "/dashboard/parent/progress", label: "Progress" },
       { href: "/dashboard/parent/billing", label: "Billing" },
+      { href: "/dashboard/parent/settings", label: "Settings" },
     ];
   }
   return [

@@ -174,3 +174,18 @@ export async function syncStripeAccount() {
     },
   });
 }
+
+export async function updateTutorAccountSettings(formData: FormData) {
+  const user = await requireUser();
+  if (user.role !== "TUTOR") redirect("/dashboard");
+  const db = await live();
+  await db.user.update({
+    where: { id: user.id },
+    data: {
+      name: String(formData.get("name") || user.name),
+      phone: String(formData.get("phone") || "") || null,
+      timezone: String(formData.get("timezone") || user.timezone),
+    },
+  });
+  redirect("/dashboard/tutor/settings?saved=1");
+}

@@ -11,7 +11,7 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma db push --force-reset && tsx prisma/seed.ts",
-    "test": "tsx --test tests/payments.test.ts tests/slots.test.ts tests/access.test.ts"
+    "test": "tsx --test tests/payments.test.ts tests/slots.test.ts tests/access.test.ts tests/analytics.test.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

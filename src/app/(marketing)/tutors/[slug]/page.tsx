@@ -25,7 +25,7 @@ export default async function TutorProfilePage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; studentId?: string; reviewed?: string }>;
 }) {
   const { slug } = await params;
   const query = await searchParams;
@@ -46,7 +46,14 @@ export default async function TutorProfilePage({
         include: { studentProfile: true, parentProfile: { include: { students: { include: { user: true } } } } },
       })
     : null;
-  const studentId = viewer?.studentProfile?.id || viewer?.parentProfile?.students[0]?.id;
+  const linkedIds = new Set(viewer?.parentProfile?.students.map((s) => s.id) || []);
+  const studentId =
+    (query.studentId && (viewer?.studentProfile?.id === query.studentId || linkedIds.has(query.studentId))
+      ? query.studentId
+      : null) ||
+    viewer?.studentProfile?.id ||
+    viewer?.parentProfile?.students[0]?.id;
+  const studentQs = studentId ? `&studentId=${encodeURIComponent(studentId)}` : "";
   const assignment = studentId
     ? await db.assignment.findUnique({ where: { studentId_tutorId: { studentId, tutorId: tutor.id } } })
     : null;
@@ -57,7 +64,10 @@ export default async function TutorProfilePage({
   return (
     <div className="mx-auto grid max-w-6xl gap-8 px-5 py-12 lg:grid-cols-[1fr_340px]">
       <div className="order-2 space-y-8 lg:order-1">
-        <Notice error={query.error} />
+        <Notice
+          error={query.error}
+          success={query.reviewed ? "Thanks — your review is live on this profile." : undefined}
+        />
         <section>
           <p className="kicker">Biography</p>
           <p className="mt-3 max-w-3xl text-lg leading-8">{tutor.bio}</p>
@@ -103,7 +113,12 @@ export default async function TutorProfilePage({
           <div className="mt-4 grid gap-3">
             {tutor.reviews.map((review) => (
               <article key={review.id} className="rounded-xl border border-line bg-paper p-4">
-                <Stars value={review.rating} />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Stars value={review.rating} />
+                  {review.verified ? (
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-mute">Verified session</span>
+                  ) : null}
+                </div>
                 <p className="mt-2 leading-7">{review.comment}</p>
                 <p className="mt-2 text-xs text-mute">{review.author.name}</p>
               </article>
@@ -121,13 +136,15 @@ export default async function TutorProfilePage({
             <form action={requestTutor} className="mt-4 grid gap-3">
               <input type="hidden" name="slug" value={tutor.slug} />
               {viewer.parentProfile && viewer.parentProfile.students.length > 1 ? (
-                <select className="field" name="studentId" aria-label="Student">
+                <select className="field" name="studentId" aria-label="Student" defaultValue={studentId}>
                   {viewer.parentProfile.students.map((student) => (
                     <option key={student.id} value={student.id}>
                       {student.user.name}
                     </option>
                   ))}
                 </select>
+              ) : studentId ? (
+                <input type="hidden" name="studentId" value={studentId} />
               ) : null}
               <textarea className="field min-h-28" name="message" placeholder="What do you want to work on, and why this tutor?" required />
               <textarea className="field min-h-20" name="goals" placeholder="Academic goals" defaultValue={viewer.studentProfile?.goals || ""} />
@@ -168,11 +185,15 @@ export default async function TutorProfilePage({
               )}
             </p>
             <div className="mt-5 grid gap-2">
-              <Link href={`/tutors/${tutor.slug}/book?type=consultation`} className="btn btn-primary">
+              <Link href={`/tutors/${tutor.slug}/book?type=consultation${studentQs}`} className="btn btn-primary">
                 Book a free consultation
               </Link>
               <Link
-                href={canBookPaidSession(assignment?.status === "ACTIVE") ? `/tutors/${tutor.slug}/book?type=session` : "#request"}
+                href={
+                  canBookPaidSession(assignment?.status === "ACTIVE")
+                    ? `/tutors/${tutor.slug}/book?type=session${studentQs}`
+                    : "#request"
+                }
                 className="btn btn-line"
               >
                 {assignment?.status === "ACTIVE" ? "Book a paid session" : "Request ongoing tutoring"}

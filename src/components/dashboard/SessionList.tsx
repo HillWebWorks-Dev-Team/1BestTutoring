@@ -114,17 +114,38 @@ export function SessionList({
               </details>
             ) : null}
 
+            {role === "STUDENT" && item.status === "COMPLETED" && item.type === "SESSION" && item.hasReview ? (
+              <p className="mt-3 border-t border-line pt-3 text-sm text-mute">Thanks — your review is published.</p>
+            ) : null}
+
             {role === "STUDENT" && item.status === "COMPLETED" && item.type === "SESSION" && !item.hasReview ? (
               <form action={saveReview} className="mt-3 grid gap-3 border-t border-line pt-3">
+                <div>
+                  <p className="text-sm font-semibold text-navy">Share feedback</p>
+                  <p className="mt-1 text-xs text-mute">Help the next family decide. Reviews appear on the tutor’s public profile.</p>
+                </div>
                 <input type="hidden" name="bookingId" value={item.id} />
-                <select className="field" name="rating" defaultValue="5" aria-label="Rating">
+                <label className="label" htmlFor={`rating-${item.id}`}>
+                  Rating
+                </label>
+                <select id={`rating-${item.id}`} className="field" name="rating" defaultValue="5">
                   {[5, 4, 3, 2, 1].map((score) => (
                     <option key={score} value={score}>
-                      {score} stars
+                      {score} star{score === 1 ? "" : "s"}
                     </option>
                   ))}
                 </select>
-                <input className="field" name="comment" placeholder="What should the next family know?" required />
+                <label className="label" htmlFor={`comment-${item.id}`}>
+                  Comment
+                </label>
+                <textarea
+                  id={`comment-${item.id}`}
+                  className="field min-h-20"
+                  name="comment"
+                  placeholder="What should the next family know?"
+                  minLength={8}
+                  required
+                />
                 <button className="btn btn-primary" type="submit">
                   Publish review
                 </button>

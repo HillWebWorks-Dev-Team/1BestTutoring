@@ -2,8 +2,20 @@
 
 import { useActionState, useMemo, useState } from "react";
 import { GRADE_LEVELS, SUBJECTS } from "@/lib/brand";
+import {
+  ACHIEVEMENT_OPTIONS,
+  CERTIFICATION_OPTIONS,
+  DEGREES,
+  EDUCATION_OPTIONS,
+  EXPERIENCE_OPTIONS,
+  GRADUATION_YEAR_OPTIONS,
+  HOURLY_RATE_OPTIONS,
+  MAJORS,
+  TEST_SCORE_OPTIONS,
+} from "@/lib/apply-options";
 import { isLinkedInUrl, normalizeLinkedInUrl, parseProfileText, type ProfileAutofill } from "@/lib/profile-autofill";
 import { UNIVERSITIES } from "@/lib/universities";
+import { SelectWithOther } from "@/components/forms/SelectWithOther";
 import { SubmitButton } from "@/components/ui";
 import { applyAsTutor } from "@/server/apply";
 import { parseLinkedInTextForAutofill, parseResumeForAutofill } from "@/server/autofill";
@@ -48,27 +60,36 @@ function mergeDraft(current: Defaults, draft: ProfileAutofill): Defaults {
   };
 }
 
+function choiceState(value: string | undefined, options: readonly string[]) {
+  const current = value?.trim() || "";
+  if (!current) return { select: options[0] || "Other", other: "" };
+  if (options.includes(current)) return { select: current, other: "" };
+  return { select: "Other", other: current };
+}
+
 export function ApplyForm({
   signedIn,
   defaults,
+  requirePhoto = true,
 }: {
   signedIn: boolean;
   defaults?: Defaults;
+  requirePhoto?: boolean;
 }) {
   const [state, action] = useActionState(applyAsTutor, null);
   const [values, setValues] = useState<Defaults>(() => ({
     name: defaults?.name || "",
     email: defaults?.email || "",
     university: defaults?.university || UNIVERSITIES[0].name,
-    major: defaults?.major || "",
-    degree: defaults?.degree || "",
-    graduationYear: defaults?.graduationYear || 2024,
+    major: defaults?.major || MAJORS[0],
+    degree: defaults?.degree || DEGREES[0],
+    graduationYear: defaults?.graduationYear || new Date().getFullYear(),
     bio: defaults?.bio || "",
-    experience: defaults?.experience || "",
-    education: defaults?.education || "",
-    achievements: defaults?.achievements || "",
-    certifications: defaults?.certifications || "",
-    testScores: defaults?.testScores || "",
+    experience: defaults?.experience || EXPERIENCE_OPTIONS[0],
+    education: defaults?.education || EDUCATION_OPTIONS[0],
+    achievements: defaults?.achievements || ACHIEVEMENT_OPTIONS[0],
+    certifications: defaults?.certifications || CERTIFICATION_OPTIONS[0],
+    testScores: defaults?.testScores || TEST_SCORE_OPTIONS[0],
     subjects: defaults?.subjects || [],
     gradeLevels: defaults?.gradeLevels || [],
     hourlyRate: defaults?.hourlyRate || 80,
@@ -79,6 +100,8 @@ export function ApplyForm({
   const [autofillError, setAutofillError] = useState<string | null>(null);
   const [autofilling, setAutofilling] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [photoName, setPhotoName] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const universitySelect = useMemo(() => {
     if (UNIVERSITIES.some((school) => school.name === values.university)) return values.university || UNIVERSITIES[0].name;
@@ -86,6 +109,16 @@ export function ApplyForm({
   }, [values.university]);
   const universityOther =
     universitySelect === "Other" && values.university && values.university !== "Other" ? values.university : "";
+
+  const major = choiceState(values.major, MAJORS);
+  const degree = choiceState(values.degree, DEGREES);
+  const graduationYear = choiceState(String(values.graduationYear || ""), GRADUATION_YEAR_OPTIONS);
+  const hourlyRate = choiceState(values.hourlyRate ? String(values.hourlyRate) : "", HOURLY_RATE_OPTIONS);
+  const experience = choiceState(values.experience, EXPERIENCE_OPTIONS);
+  const education = choiceState(values.education, EDUCATION_OPTIONS);
+  const achievements = choiceState(values.achievements, ACHIEVEMENT_OPTIONS);
+  const certifications = choiceState(values.certifications, CERTIFICATION_OPTIONS);
+  const testScores = choiceState(values.testScores, TEST_SCORE_OPTIONS);
 
   function setField<K extends keyof Defaults>(key: K, value: Defaults[K]) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -160,12 +193,23 @@ export function ApplyForm({
     setAutofillNote("Filled from your resume. Review the fields, then finish anything we missed.");
   }
 
-  return (
-    <form action={action} className="grid gap-8">
-      {state?.error ? <p className="rounded-2xl bg-[#fbf1ef] px-4 py-3 text-sm text-[#7d332c]">{state.error}</p> : null}
+  function onPhotoSelected(file: File | null) {
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    if (!file) {
+      setPhotoName(null);
+      setPhotoPreview(null);
+      return;
+    }
+    setPhotoName(file.name);
+    setPhotoPreview(URL.createObjectURL(file));
+  }
 
-      <fieldset className="grid gap-4 rounded-2xl border border-line bg-paper p-5">
-        <legend className="px-1 font-serif text-3xl">Quick fill</legend>
+  return (
+    <form action={action} className="grid gap-10" encType="multipart/form-data">
+      {state?.error ? <p className="border border-[#e7c7c2] bg-[#fbf1ef] px-4 py-3 text-sm text-[#7d332c]">{state.error}</p> : null}
+
+      <fieldset className="grid gap-4 border border-line bg-white p-5 sm:p-6">
+        <legend className="px-1 font-serif text-3xl text-navy">Quick fill</legend>
         <p className="text-sm leading-6 text-mute">
           Autocomplete from a LinkedIn profile paste, or upload a resume and we&apos;ll fill matching fields. You can still edit everything afterward.
         </p>
@@ -207,12 +251,12 @@ export function ApplyForm({
           />
           {resumeFile ? <p className="mt-2 text-xs text-mute">Selected: {resumeFile.name}</p> : null}
         </div>
-        {autofillNote ? <p className="rounded-xl bg-mist px-4 py-3 text-sm text-navy">{autofillNote}</p> : null}
-        {autofillError ? <p className="rounded-xl bg-[#fbf1ef] px-4 py-3 text-sm text-[#7d332c]">{autofillError}</p> : null}
+        {autofillNote ? <p className="border border-line bg-mist px-4 py-3 text-sm text-navy">{autofillNote}</p> : null}
+        {autofillError ? <p className="border border-[#e7c7c2] bg-[#fbf1ef] px-4 py-3 text-sm text-[#7d332c]">{autofillError}</p> : null}
       </fieldset>
 
-      <fieldset className="grid gap-4">
-        <legend className="font-serif text-3xl">Account</legend>
+      <fieldset className="grid gap-4 border border-line bg-white p-5 sm:p-6">
+        <legend className="px-1 font-serif text-3xl text-navy">Account</legend>
         <label className="label" htmlFor="name">Full name</label>
         <input id="name" className="field" name="name" value={values.name || ""} onChange={(event) => setField("name", event.target.value)} required />
         <label className="label" htmlFor="email">Email</label>
@@ -223,9 +267,27 @@ export function ApplyForm({
             <input id="password" className="field" name="password" type="password" minLength={8} required />
           </>
         )}
+        <div>
+          <label className="label" htmlFor="photo">Profile photo</label>
+          <p className="mb-2 text-sm text-mute">Required. A clear headshot tutors and families will see on your profile.</p>
+          <input
+            id="photo"
+            className="field"
+            name="photo"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            required={requirePhoto}
+            onChange={(event) => onPhotoSelected(event.target.files?.[0] || null)}
+          />
+          {photoName ? <p className="mt-2 text-xs text-mute">Selected: {photoName}</p> : null}
+          {photoPreview ? (
+            <img src={photoPreview} alt="" className="mt-3 h-28 w-28 rounded-xl object-cover" />
+          ) : null}
+        </div>
       </fieldset>
-      <fieldset className="grid gap-4 md:grid-cols-2">
-        <legend className="font-serif text-3xl md:col-span-2">Academics</legend>
+
+      <fieldset className="grid gap-4 border border-line bg-white p-5 sm:p-6 md:grid-cols-2">
+        <legend className="px-1 font-serif text-3xl text-navy md:col-span-2">Academics</legend>
         <label className="label md:col-span-2" htmlFor="university">University</label>
         <select
           id="university"
@@ -244,50 +306,76 @@ export function ApplyForm({
           ))}
           <option value="Other">Other</option>
         </select>
-        <input
-          className="field md:col-span-2"
-          name="universityOther"
-          placeholder="If other, write the school"
-          value={universityOther}
-          onChange={(event) => setField("university", event.target.value || "Other")}
+        {universitySelect === "Other" ? (
+          <input
+            className="field md:col-span-2"
+            name="universityOther"
+            placeholder="If other, write the school"
+            value={universityOther}
+            onChange={(event) => setField("university", event.target.value || "Other")}
+            required
+          />
+        ) : (
+          <input type="hidden" name="universityOther" value="" />
+        )}
+
+        <SelectWithOther
+          id="major"
+          label="Major"
+          name="major"
+          options={MAJORS}
+          value={major.select}
+          otherValue={major.other}
+          onSelect={(value) => setField("major", value === "Other" ? major.other || "Other" : value)}
+          onOther={(value) => setField("major", value || "Other")}
+          required
         />
-        <div>
-          <label className="label" htmlFor="major">Major</label>
-          <input id="major" className="field" name="major" value={values.major || ""} onChange={(event) => setField("major", event.target.value)} required />
-        </div>
-        <div>
-          <label className="label" htmlFor="degree">Degree</label>
-          <input id="degree" className="field" name="degree" placeholder="BA, BS, AB…" value={values.degree || ""} onChange={(event) => setField("degree", event.target.value)} required />
-        </div>
-        <div>
-          <label className="label" htmlFor="graduationYear">Graduation year</label>
-          <input
-            id="graduationYear"
-            className="field"
-            name="graduationYear"
-            type="number"
-            value={values.graduationYear || 2024}
-            onChange={(event) => setField("graduationYear", Number(event.target.value))}
-            required
-          />
-        </div>
-        <div>
-          <label className="label" htmlFor="hourlyRate">Your hourly rate (USD)</label>
-          <input
-            id="hourlyRate"
-            className="field"
-            name="hourlyRate"
-            type="number"
-            min="25"
-            step="1"
-            value={values.hourlyRate || 80}
-            onChange={(event) => setField("hourlyRate", Number(event.target.value))}
-            required
-          />
-        </div>
+        <SelectWithOther
+          id="degree"
+          label="Degree"
+          name="degree"
+          options={DEGREES}
+          value={degree.select}
+          otherValue={degree.other}
+          onSelect={(value) => setField("degree", value === "Other" ? degree.other || "Other" : value)}
+          onOther={(value) => setField("degree", value || "Other")}
+          required
+        />
+        <SelectWithOther
+          id="graduationYear"
+          label="Graduation year"
+          name="graduationYear"
+          options={GRADUATION_YEAR_OPTIONS}
+          value={graduationYear.select}
+          otherValue={graduationYear.other}
+          onSelect={(value) =>
+            setField("graduationYear", value === "Other" ? Number(graduationYear.other) || new Date().getFullYear() : Number(value))
+          }
+          onOther={(value) => setField("graduationYear", Number(value) || new Date().getFullYear())}
+          otherInputType="number"
+          otherPlaceholder="Enter graduation year"
+          required
+        />
+        <SelectWithOther
+          id="hourlyRate"
+          label="Your hourly rate (USD)"
+          name="hourlyRate"
+          options={HOURLY_RATE_OPTIONS}
+          value={hourlyRate.select}
+          otherValue={hourlyRate.other}
+          onSelect={(value) =>
+            setField("hourlyRate", value === "Other" ? Number(hourlyRate.other) || 80 : Number(value))
+          }
+          onOther={(value) => setField("hourlyRate", Number(value) || 0)}
+          otherInputType="number"
+          otherPlaceholder="Enter your hourly rate"
+          formatOption={(option) => (option === "Other" ? "Other" : `$${option}/hr`)}
+          required
+        />
       </fieldset>
-      <fieldset className="grid gap-3">
-        <legend className="font-serif text-3xl">Subjects and grades</legend>
+
+      <fieldset className="grid gap-3 border border-line bg-white p-5 sm:p-6">
+        <legend className="px-1 font-serif text-3xl text-navy">Subjects and grades</legend>
         <div className="grid gap-2 sm:grid-cols-2">
           {SUBJECTS.map((subject) => (
             <label key={subject} className="flex items-center gap-2 text-sm">
@@ -305,34 +393,99 @@ export function ApplyForm({
           ))}
         </div>
       </fieldset>
-      <fieldset className="grid gap-4">
-        <legend className="font-serif text-3xl">Your practice</legend>
+
+      <fieldset className="grid gap-4 border border-line bg-white p-5 sm:p-6">
+        <legend className="px-1 font-serif text-3xl text-navy">Your practice</legend>
         <label className="label" htmlFor="bio">Biography</label>
         <textarea id="bio" className="field min-h-32" name="bio" value={values.bio || ""} onChange={(event) => setField("bio", event.target.value)} required />
-        <label className="label" htmlFor="experience">Tutoring and work experience</label>
-        <textarea id="experience" className="field min-h-28" name="experience" value={values.experience || ""} onChange={(event) => setField("experience", event.target.value)} required />
-        <label className="label" htmlFor="education">Educational background</label>
-        <textarea id="education" className="field min-h-20" name="education" value={values.education || ""} onChange={(event) => setField("education", event.target.value)} />
-        <label className="label" htmlFor="achievements">Academic achievements</label>
-        <textarea id="achievements" className="field min-h-20" name="achievements" value={values.achievements || ""} onChange={(event) => setField("achievements", event.target.value)} />
-        <label className="label" htmlFor="certifications">Certifications</label>
-        <textarea id="certifications" className="field min-h-16" name="certifications" value={values.certifications || ""} onChange={(event) => setField("certifications", event.target.value)} />
-        <label className="label" htmlFor="testScores">Relevant test scores</label>
-        <input id="testScores" className="field" name="testScores" value={values.testScores || ""} onChange={(event) => setField("testScores", event.target.value)} />
+
+        <SelectWithOther
+          id="experience"
+          label="Tutoring and work experience"
+          name="experience"
+          options={EXPERIENCE_OPTIONS}
+          value={experience.select}
+          otherValue={experience.other}
+          onSelect={(value) => setField("experience", value === "Other" ? experience.other || "Other" : value)}
+          onOther={(value) => setField("experience", value || "Other")}
+          otherPlaceholder="Describe your tutoring or teaching experience"
+          required
+        />
+        <SelectWithOther
+          id="education"
+          label="Educational background"
+          name="education"
+          options={EDUCATION_OPTIONS}
+          value={education.select}
+          otherValue={education.other}
+          onSelect={(value) => setField("education", value === "Other" ? education.other || "Other" : value)}
+          onOther={(value) => setField("education", value || "Other")}
+          otherPlaceholder="Describe your educational background"
+          required
+        />
+        <SelectWithOther
+          id="achievements"
+          label="Academic achievements"
+          name="achievements"
+          options={ACHIEVEMENT_OPTIONS}
+          value={achievements.select}
+          otherValue={achievements.other}
+          onSelect={(value) =>
+            setField(
+              "achievements",
+              value === "Other" || value === "None of these / prefer to describe"
+                ? achievements.other || value
+                : value,
+            )
+          }
+          onOther={(value) => setField("achievements", value || "Other")}
+          otherPlaceholder="Describe your achievements"
+        />
+        <SelectWithOther
+          id="certifications"
+          label="Certifications"
+          name="certifications"
+          options={CERTIFICATION_OPTIONS}
+          value={certifications.select}
+          otherValue={certifications.other}
+          onSelect={(value) => setField("certifications", value === "Other" ? certifications.other || "Other" : value)}
+          onOther={(value) => setField("certifications", value || "Other")}
+          otherPlaceholder="List your certifications"
+        />
+        <SelectWithOther
+          id="testScores"
+          label="Relevant test scores"
+          name="testScores"
+          options={TEST_SCORE_OPTIONS}
+          value={testScores.select}
+          otherValue={testScores.other}
+          onSelect={(value) => setField("testScores", value === "Other" ? testScores.other || "Other" : value)}
+          onOther={(value) => setField("testScores", value || "Other")}
+          otherPlaceholder="Share the scores you want listed"
+        />
+
         <label className="label" htmlFor="introVideoUrl">Optional introduction video URL</label>
         <input id="introVideoUrl" className="field" name="introVideoUrl" placeholder="https://youtube.com/..." />
         <label className="label" htmlFor="availabilityNotes">When you can meet</label>
         <textarea id="availabilityNotes" className="field min-h-20" name="availabilityNotes" placeholder="Weekday evenings, Eastern Time…" />
       </fieldset>
-      <fieldset className="grid gap-4">
-        <legend className="font-serif text-3xl">More documents</legend>
+
+      <fieldset className="grid gap-4 border border-line bg-white p-5 sm:p-6">
+        <legend className="px-1 font-serif text-3xl text-navy">More documents</legend>
         <p className="text-sm text-mute">PDF or image, up to 4MB. Proof of enrollment or graduation is required when we ask for it. Your resume above is already included with the application.</p>
         <label className="label" htmlFor="credentials">Academic credentials</label>
         <input id="credentials" className="field" name="credentials" type="file" accept=".pdf,image/*,.txt" />
         <label className="label" htmlFor="proof">Proof of enrollment or graduation</label>
         <input id="proof" className="field" name="proof" type="file" accept=".pdf,image/*,.txt" />
       </fieldset>
-      <SubmitButton pendingLabel="Submitting…">Submit application</SubmitButton>
+      <div className="border border-line bg-white p-5 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:p-6">
+        <p className="text-sm leading-6 text-mute">
+          Submitting sends your application to our review queue. You can sign in later to check status.
+        </p>
+        <SubmitButton pendingLabel="Submitting…" className="btn btn-primary mt-4 w-full sm:mt-0 sm:w-auto">
+          Submit application
+        </SubmitButton>
+      </div>
     </form>
   );
 }

@@ -13,13 +13,19 @@ export async function login(_state: { error?: string } | null, formData: FormDat
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const password = String(formData.get("password") || "");
   const next = String(formData.get("next") || "/dashboard");
-  const db = await live();
-  const user = await db.user.findUnique({ where: { email } });
-  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-    return { error: "That email and password don’t match." };
+  if (!email || !password) return { error: "Enter your email address and password." };
+  try {
+    const db = await live();
+    const user = await db.user.findUnique({ where: { email } });
+    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+      return { error: "That email and password don’t match." };
+    }
+    await setSessionCookie({ uid: user.id, role: user.role, name: user.name, email: user.email });
+  } catch {
+    return { error: "We couldn’t sign you in right now. Please try again shortly." };
   }
-  await setSessionCookie({ uid: user.id, role: user.role, name: user.name, email: user.email });
-  redirect(next.startsWith("/") ? next : "/dashboard");
+  // Only allow local paths; protocol-relative URLs and backslashes can leave the site.
+  redirect(next.startsWith("/") && !next.startsWith("//") && !/[\\\u0000-\u0020]/.test(next) ? next : "/dashboard");
 }
 
 const registerSchema = z.object({
@@ -58,6 +64,16 @@ export async function register(_state: { error?: string } | null, formData: Form
     return { error: "Choose a grade level." };
   }
 
+  const referralCodeInput = data.referral?.trim().toUpperCase() || "";
+  let referrerProfile: { userId: string; referralCode: string } | null = null;
+  if (data.role === "STUDENT" && referralCodeInput) {
+    referrerProfile = await db.studentProfile.findUnique({
+      where: { referralCode: referralCodeInput },
+      select: { userId: true, referralCode: true },
+    });
+    if (!referrerProfile) return { error: "That referral code isn’t recognized." };
+  }
+
   const user = await db.user.create({
     data: {
       name: data.name,
@@ -73,7 +89,7 @@ export async function register(_state: { error?: string } | null, formData: Form
                 guardianEmail,
                 isMinor,
                 referralCode: referralCode(data.name),
-                referredByCode: data.referral?.trim().toUpperCase() || null,
+                referredByCode: referrerProfile?.referralCode || null,
               },
             }
           : undefined,
@@ -81,14 +97,14 @@ export async function register(_state: { error?: string } | null, formData: Form
     },
   });
 
-  if (data.role === "STUDENT" && data.referral) {
-    const code = data.referral.trim().toUpperCase();
-    const referrer = await db.studentProfile.findUnique({ where: { referralCode: code } });
-    if (referrer) {
-      await db.referral.create({
-        data: { code, referrerUserId: referrer.userId, referredUserId: user.id },
-      });
-    }
+  if (data.role === "STUDENT" && referrerProfile) {
+    await db.referral.create({
+      data: {
+        code: referrerProfile.referralCode,
+        referrerUserId: referrerProfile.userId,
+        referredUserId: user.id,
+      },
+    });
   }
 
   await notifyAdmins({

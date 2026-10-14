@@ -3,17 +3,19 @@ export type University = {
   short: string;
   mark: string;
   group: "Ivy League" | "Top 30";
+  /** Public path under /univ-logos — sourced from public/univ logo */
+  logo?: string;
 };
 
 export const UNIVERSITIES: University[] = [
-  { name: "Harvard University", short: "Harvard", mark: "H", group: "Ivy League" },
-  { name: "Yale University", short: "Yale", mark: "Y", group: "Ivy League" },
-  { name: "Princeton University", short: "Princeton", mark: "P", group: "Ivy League" },
-  { name: "Columbia University", short: "Columbia", mark: "C", group: "Ivy League" },
-  { name: "University of Pennsylvania", short: "Penn", mark: "P", group: "Ivy League" },
-  { name: "Brown University", short: "Brown", mark: "B", group: "Ivy League" },
-  { name: "Dartmouth College", short: "Dartmouth", mark: "D", group: "Ivy League" },
-  { name: "Cornell University", short: "Cornell", mark: "C", group: "Ivy League" },
+  { name: "Harvard University", short: "Harvard", mark: "H", group: "Ivy League", logo: "/univ-logos/harvard.svg" },
+  { name: "Yale University", short: "Yale", mark: "Y", group: "Ivy League", logo: "/univ-logos/yale.svg" },
+  { name: "Princeton University", short: "Princeton", mark: "P", group: "Ivy League", logo: "/univ-logos/princeton.webp" },
+  { name: "Columbia University", short: "Columbia", mark: "C", group: "Ivy League", logo: "/univ-logos/columbia.png" },
+  { name: "University of Pennsylvania", short: "Penn", mark: "P", group: "Ivy League", logo: "/univ-logos/penn.png" },
+  { name: "Brown University", short: "Brown", mark: "B", group: "Ivy League", logo: "/univ-logos/brown.png" },
+  { name: "Dartmouth College", short: "Dartmouth", mark: "D", group: "Ivy League", logo: "/univ-logos/dartmouth.png" },
+  { name: "Cornell University", short: "Cornell", mark: "C", group: "Ivy League", logo: "/univ-logos/cornell.webp" },
   { name: "Stanford University", short: "Stanford", mark: "S", group: "Top 30" },
   { name: "Massachusetts Institute of Technology", short: "MIT", mark: "MIT", group: "Top 30" },
   { name: "Duke University", short: "Duke", mark: "D", group: "Top 30" },

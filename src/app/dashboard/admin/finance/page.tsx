@@ -86,9 +86,14 @@ export default async function FinancePage({
             commission minus processing fees.
           </p>
         </div>
-        <Link href="/dashboard/admin/bookings" className="btn btn-line">
-          View sessions
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/dashboard/admin/analytics" className="btn btn-line">
+            Analytics
+          </Link>
+          <Link href="/dashboard/admin/bookings" className="btn btn-line">
+            View sessions
+          </Link>
+        </div>
       </div>
 
       <div className="my-5">
