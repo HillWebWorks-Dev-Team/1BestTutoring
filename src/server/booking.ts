@@ -50,7 +50,7 @@ export async function getOpenSlots(slug: string, date: string, type: "CONSULTATI
 }
 
 async function studentActor(studentId?: string | null) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   if (user.role === "STUDENT" && user.studentProfile) return { user, student: user.studentProfile };
   if (user.role === "PARENT") {
     const students = user.parentProfile?.students ?? [];
@@ -105,7 +105,7 @@ export async function bookSlot(input: {
   studentId?: string;
   rescheduleId?: string;
 }): Promise<{ error?: string; checkoutUrl?: string; next?: string }> {
-  const actor = await requireUser();
+  const actor = await requireUser({ write: true });
   if (input.rescheduleId && (actor.role === "TUTOR" || actor.role === "ADMIN")) {
     const settings = await platformSettings();
     const db = await live();
@@ -413,7 +413,7 @@ async function reschedule(bookingId: string, actorId: string, startsAt: Date, en
 }
 
 export async function cancelBooking(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   const db = await live();
   const settings = await platformSettings();
   const booking = await db.booking.findUnique({

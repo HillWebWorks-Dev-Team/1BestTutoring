@@ -8,6 +8,8 @@ export type SessionPayload = {
   role: string;
   name: string;
   email: string;
+  impersonatorUid?: string;
+  impersonatorName?: string;
 };
 
 const COOKIE = "opb_session";
@@ -17,8 +19,21 @@ function secret() {
   return new TextEncoder().encode(value);
 }
 
+export function isImpersonating(session: SessionPayload | null | undefined) {
+  return Boolean(session?.impersonatorUid);
+}
+
 export async function signSession(payload: SessionPayload) {
-  return new SignJWT(payload)
+  const claims: Record<string, string> = {
+    uid: payload.uid,
+    role: payload.role,
+    name: payload.name,
+    email: payload.email,
+  };
+  if (payload.impersonatorUid) claims.impersonatorUid = payload.impersonatorUid;
+  if (payload.impersonatorName) claims.impersonatorName = payload.impersonatorName;
+
+  return new SignJWT(claims)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("14d")
@@ -27,12 +42,15 @@ export async function signSession(payload: SessionPayload) {
 
 export async function readSession(token: string) {
   const { payload } = await jwtVerify(token, secret());
-  return {
+  const session: SessionPayload = {
     uid: String(payload.uid),
     role: String(payload.role),
     name: String(payload.name),
     email: String(payload.email),
-  } satisfies SessionPayload;
+  };
+  if (payload.impersonatorUid) session.impersonatorUid = String(payload.impersonatorUid);
+  if (payload.impersonatorName) session.impersonatorName = String(payload.impersonatorName);
+  return session;
 }
 
 export async function setSessionCookie(payload: SessionPayload) {
@@ -63,9 +81,22 @@ export async function getSession() {
   }
 }
 
-export async function requireUser() {
+export async function requireUser(options?: { write?: boolean }) {
   const session = await getSession();
   if (!session) redirect("/login");
+  if (options?.write && isImpersonating(session)) {
+    const home =
+      session.role === "TUTOR"
+        ? "/dashboard/tutor"
+        : session.role === "PARENT"
+          ? "/dashboard/parent"
+          : session.role === "ADMIN"
+            ? "/dashboard/admin"
+            : "/dashboard/student";
+    redirect(
+      `${home}?error=${encodeURIComponent("View-only mode. Return to admin to make changes.")}`,
+    );
+  }
   const db = await live();
   const user = await db.user.findUnique({
     where: { id: session.uid },

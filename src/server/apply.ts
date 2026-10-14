@@ -8,7 +8,7 @@ import { GRADE_LEVELS, SUBJECTS } from "@/lib/brand";
 import { slugify } from "@/lib/format";
 import { live, platformSettings } from "@/lib/live";
 import { notifyAdmins } from "@/lib/notify";
-import { getSession, setSessionCookie } from "@/lib/session";
+import { getSession, isImpersonating, setSessionCookie } from "@/lib/session";
 
 const ALLOWED_FILES = ["application/pdf", "image/png", "image/jpeg", "image/webp", "text/plain"];
 const ALLOWED_PHOTOS = ["image/png", "image/jpeg", "image/webp"];
@@ -156,6 +156,9 @@ export async function applyAsTutor(_state: { error?: string } | null, formData: 
 
   const db = await live();
   const session = await getSession();
+  if (isImpersonating(session)) {
+    return { error: "View-only mode. Return to admin to make changes." };
+  }
   const email = parsed.data.email.toLowerCase();
 
   try {
@@ -278,6 +281,7 @@ function profileData(
 export async function reportConcern(_state: { error?: string; ok?: boolean } | null, formData: FormData) {
   const session = await getSession();
   if (!session) return { error: "Sign in to send a report." };
+  if (isImpersonating(session)) return { error: "View-only mode. Return to admin to make changes." };
   const details = String(formData.get("details") || "").trim();
   const reason = String(formData.get("reason") || "Concern");
   if (details.length < 8) return { error: "Tell us what happened in a sentence or two." };

@@ -1,11 +1,17 @@
 import Link from "next/link";
+import { Notice } from "@/components/ui";
 import { money } from "@/lib/format";
 import { live } from "@/lib/live";
 import { requireRole } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminHome() {
+export default async function AdminHome({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const query = await searchParams;
   await requireRole(["ADMIN"]);
   const db = await live();
   const startOfMonth = new Date();
@@ -72,6 +78,7 @@ export default async function AdminHome() {
 
   return (
     <div className="mx-auto max-w-6xl">
+      <Notice error={query.error} />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="kicker">Overview</p>

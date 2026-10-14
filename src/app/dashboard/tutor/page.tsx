@@ -1,11 +1,17 @@
 import Link from "next/link";
+import { Notice } from "@/components/ui";
 import { money, formatWhen } from "@/lib/format";
 import { live } from "@/lib/live";
 import { requireUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
-export default async function TutorHome() {
+export default async function TutorHome({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const query = await searchParams;
   const user = await requireUser();
   const profile = user.tutorProfile;
   if (!profile) return null;
@@ -36,6 +42,7 @@ export default async function TutorHome() {
   const earned = paid.reduce((sum, item) => sum + item.tutorShareCents, 0);
   return (
     <div className="mx-auto max-w-5xl">
+      <Notice error={query.error} />
       <p className="kicker">Tutor desk</p>
       <h1 className="mt-2 font-serif text-5xl">{user.name.split(" ")[0]}, your roster.</h1>
       <div className="mt-8 grid gap-4 md:grid-cols-3">

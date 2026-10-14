@@ -5,6 +5,7 @@ import { Notice } from "@/components/ui";
 import { live } from "@/lib/live";
 import { portraitFor } from "@/lib/portraits";
 import { adminLinkParent } from "@/server/admin";
+import { startImpersonation } from "@/server/impersonation";
 
 export const dynamic = "force-dynamic";
 
@@ -178,6 +179,20 @@ export default async function AdminStudents({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                  <form action={startImpersonation}>
+                    <input type="hidden" name="userId" value={student.userId} />
+                    <button className="btn btn-line !px-3 !py-1.5 text-xs" type="submit">
+                      View as student
+                    </button>
+                  </form>
+                  {guardian ? (
+                    <form action={startImpersonation}>
+                      <input type="hidden" name="userId" value={guardian.id} />
+                      <button className="btn btn-line !px-3 !py-1.5 text-xs" type="submit">
+                        View as parent
+                      </button>
+                    </form>
+                  ) : null}
                   {!matched ? (
                     <Link href="/dashboard/admin/assignments" className="btn btn-primary !px-3 !py-1.5 text-xs">
                       Match tutor

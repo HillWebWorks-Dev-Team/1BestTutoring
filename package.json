@@ -10,6 +10,7 @@
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
+    "db:clear-demo": "tsx prisma/clear-demo.ts",
     "db:reset": "prisma db push --force-reset && tsx prisma/seed.ts",
     "test": "tsx --test tests/payments.test.ts tests/slots.test.ts tests/access.test.ts tests/analytics.test.ts"
   },

@@ -22,7 +22,7 @@ async function activeAssignment(userId: string, otherUserId: string) {
 }
 
 export async function sendMessage(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   const recipientId = String(formData.get("recipientId") || "");
   const body = String(formData.get("body") || "").trim();
   if (!recipientId || body.length < 1) return;
@@ -70,7 +70,7 @@ export async function sendMessage(formData: FormData) {
 }
 
 export async function markConversationUnread(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   const otherUserId = String(formData.get("otherUserId") || "");
   const returnTo = String(formData.get("returnTo") || "/dashboard");
   if (!otherUserId) redirect(returnTo);
@@ -96,7 +96,7 @@ export async function markConversationUnread(formData: FormData) {
 }
 
 export async function toggleConversationPin(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   const otherUserId = String(formData.get("otherUserId") || "");
   const returnTo = String(formData.get("returnTo") || "/dashboard");
   if (!otherUserId) redirect(returnTo);
@@ -122,7 +122,7 @@ export async function toggleConversationPin(formData: FormData) {
 }
 
 export async function createHomework(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   if (!user.tutorProfile || user.tutorProfile.status !== "APPROVED") redirect("/dashboard/tutor");
   const studentId = String(formData.get("studentId") || "");
   const title = String(formData.get("title") || "").trim();
@@ -159,7 +159,7 @@ export async function createHomework(formData: FormData) {
 }
 
 export async function submitHomework(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   if (!user.studentProfile) redirect("/dashboard");
   const db = await live();
   const homework = await db.homework.findUnique({
@@ -185,7 +185,7 @@ export async function submitHomework(formData: FormData) {
 }
 
 export async function reviewHomework(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   if (!user.tutorProfile) redirect("/dashboard");
   const db = await live();
   const homework = await db.homework.findUnique({
@@ -214,7 +214,7 @@ export async function reviewHomework(formData: FormData) {
 }
 
 export async function saveReport(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   if (!user.tutorProfile) redirect("/dashboard");
   const db = await live();
   const booking = await db.booking.findUnique({
@@ -261,7 +261,7 @@ export async function saveReport(formData: FormData) {
 }
 
 export async function saveProgress(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   if (!user.tutorProfile) redirect("/dashboard");
   const studentId = String(formData.get("studentId") || "");
   const db = await live();
@@ -286,7 +286,7 @@ export async function saveProgress(formData: FormData) {
 }
 
 export async function saveReview(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   if (!user.studentProfile) redirect("/dashboard");
   const db = await live();
   const booking = await db.booking.findUnique({
@@ -320,7 +320,7 @@ export async function saveReview(formData: FormData) {
 }
 
 export async function updateStudentSettings(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   const db = await live();
   await db.user.update({
     where: { id: user.id },
@@ -347,7 +347,7 @@ export async function updateStudentSettings(formData: FormData) {
 }
 
 export async function linkChild(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   if (!user.parentProfile) redirect("/dashboard");
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const db = await live();
@@ -365,7 +365,7 @@ export async function linkChild(formData: FormData) {
 }
 
 export async function updateParentSettings(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   if (user.role !== "PARENT" || !user.parentProfile) redirect("/dashboard");
   const db = await live();
   await db.user.update({
@@ -380,7 +380,7 @@ export async function updateParentSettings(formData: FormData) {
 }
 
 export async function updateChildGoals(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   if (user.role !== "PARENT" || !user.parentProfile) redirect("/dashboard");
   const studentId = String(formData.get("studentId") || "");
   const linked = user.parentProfile.students.some((student) => student.id === studentId);
@@ -394,7 +394,7 @@ export async function updateChildGoals(formData: FormData) {
 }
 
 export async function markNotificationsRead() {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   const db = await live();
   await db.notification.updateMany({
     where: { userId: user.id, readAt: null },

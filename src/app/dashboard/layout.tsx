@@ -1,7 +1,7 @@
 import { DashboardShell, type DashLink } from "@/components/dashboard/Shell";
 import { paymentsMode } from "@/lib/brand";
 import { live } from "@/lib/live";
-import { requireUser } from "@/lib/session";
+import { getSession, isImpersonating, requireUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +59,7 @@ function linksFor(role: string, pendingTutor: boolean, unreadMessages = 0): Dash
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();
+  const session = await getSession();
   const db = await live();
   const [unread, unreadMessages] = await Promise.all([
     db.notification.count({ where: { userId: user.id, readAt: null } }),
@@ -72,6 +73,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
       links={linksFor(user.role, pendingTutor, unreadMessages)}
       unread={unread}
       demo={paymentsMode() === "demo"}
+      viewingAs={
+        isImpersonating(session)
+          ? { adminName: session?.impersonatorName || "Admin" }
+          : null
+      }
     >
       {children}
     </DashboardShell>

@@ -20,7 +20,7 @@ const QUALIFICATIONS = [
 ] as const;
 
 export async function updateTutorProfile(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   if (!user.tutorProfile) redirect("/dashboard");
   if (user.tutorProfile.status !== "APPROVED") redirect("/dashboard/tutor/application");
   const settings = await platformSettings();
@@ -83,7 +83,7 @@ export async function updateTutorProfile(formData: FormData) {
 }
 
 export async function saveAvailability(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   if (!user.tutorProfile || user.tutorProfile.status !== "APPROVED") redirect("/dashboard/tutor/application");
   const rules: Array<{ dayOfWeek: number; startMin: number; endMin: number }> = [];
   for (let day = 0; day < 7; day += 1) {
@@ -110,7 +110,7 @@ function toMinutes(value: string) {
 }
 
 export async function blockDate(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   if (!user.tutorProfile) redirect("/dashboard");
   const date = String(formData.get("date") || "");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) redirect("/dashboard/tutor/availability?error=Choose a date.");
@@ -122,7 +122,7 @@ export async function blockDate(formData: FormData) {
 }
 
 export async function removeBlock(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   if (!user.tutorProfile) redirect("/dashboard");
   const db = await live();
   await db.availabilityBlock.deleteMany({
@@ -132,7 +132,7 @@ export async function removeBlock(formData: FormData) {
 }
 
 export async function startStripeConnect() {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   if (!user.tutorProfile || user.tutorProfile.status !== "APPROVED") redirect("/dashboard/tutor/application");
   const stripe = getStripe();
   if (!stripe) redirect("/dashboard/tutor/earnings?error=Add Stripe keys to turn on live payouts. Demo payments still record the 70/30 split.");
@@ -159,7 +159,7 @@ export async function startStripeConnect() {
 }
 
 export async function syncStripeAccount() {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   if (!user.tutorProfile?.stripeAccountId) return user.tutorProfile;
   const stripe = getStripe();
   if (!stripe) return user.tutorProfile;
@@ -176,7 +176,7 @@ export async function syncStripeAccount() {
 }
 
 export async function updateTutorAccountSettings(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   if (user.role !== "TUTOR") redirect("/dashboard");
   const db = await live();
   await db.user.update({

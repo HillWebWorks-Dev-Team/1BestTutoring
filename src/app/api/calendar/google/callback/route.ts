@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { appUrl } from "@/lib/brand";
-import { getSession } from "@/lib/session";
+import { getSession, isImpersonating } from "@/lib/session";
 
 export async function GET(request: Request) {
   const session = await getSession();
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   if (!session || !code) return NextResponse.redirect(`${appUrl()}/login`);
+  if (isImpersonating(session)) {
+    return NextResponse.redirect(
+      `${appUrl()}/dashboard?error=${encodeURIComponent("View-only mode. Return to admin to make changes.")}`,
+    );
+  }
   const response = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },

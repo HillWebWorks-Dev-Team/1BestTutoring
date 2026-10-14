@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Logo } from "@/components/brand";
 import { logout } from "@/server/auth";
+import { stopImpersonation } from "@/server/impersonation";
 
 export type DashLink = { href: string; label: string; locked?: boolean; badge?: number };
 
@@ -14,6 +15,7 @@ export function DashboardShell({
   links,
   unread,
   demo,
+  viewingAs,
   children,
 }: {
   name: string;
@@ -21,6 +23,7 @@ export function DashboardShell({
   links: DashLink[];
   unread: number;
   demo: boolean;
+  viewingAs?: { adminName: string } | null;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -67,6 +70,13 @@ export function DashboardShell({
               Notifications{unread ? ` (${unread})` : ""}
             </Link>
             <p className="mt-4 text-sm text-ivory">{name}</p>
+            {viewingAs ? (
+              <form action={stopImpersonation} className="mt-3">
+                <button className="text-sm text-gold" type="submit">
+                  Exit view-as
+                </button>
+              </form>
+            ) : null}
             <form action={logout} className="mt-3">
               <button className="text-sm text-ivory/60" type="submit">
                 Sign out
@@ -84,6 +94,18 @@ export function DashboardShell({
             Alerts{unread ? ` (${unread})` : ""}
           </Link>
         </div>
+        {viewingAs ? (
+          <div className="flex flex-wrap items-center justify-center gap-3 border-b border-gold/40 bg-gold/15 px-5 py-2.5 text-center text-xs text-navy">
+            <span>
+              Viewing as <strong>{name}</strong> ({role}) · read-only · signed in as {viewingAs.adminName}
+            </span>
+            <form action={stopImpersonation}>
+              <button className="font-semibold underline" type="submit">
+                Back to admin
+              </button>
+            </form>
+          </div>
+        ) : null}
         {demo ? (
           <div className="border-b border-cream bg-cream/70 px-5 py-2 text-center text-xs text-navy">
             Demo payments are on. Splits are calculated for real, and no card is charged until Stripe keys are added.

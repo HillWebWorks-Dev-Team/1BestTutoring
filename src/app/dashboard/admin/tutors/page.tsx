@@ -6,6 +6,7 @@ import { hourly } from "@/lib/format";
 import { live } from "@/lib/live";
 import { portraitFor } from "@/lib/portraits";
 import { decideQualification, saveAdminTutorNotes, toggleTutorActive } from "@/server/admin";
+import { startImpersonation } from "@/server/impersonation";
 
 export const dynamic = "force-dynamic";
 
@@ -175,6 +176,12 @@ export default async function AdminTutors({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                  <form action={startImpersonation}>
+                    <input type="hidden" name="userId" value={tutor.userId} />
+                    <button className="btn btn-line !px-3 !py-1.5 text-xs" type="submit">
+                      View as tutor
+                    </button>
+                  </form>
                   {approved ? (
                     <Link href={`/tutors/${tutor.slug}`} className="btn btn-line !px-3 !py-1.5 text-xs">
                       View profile

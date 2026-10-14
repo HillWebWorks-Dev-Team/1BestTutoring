@@ -11,7 +11,7 @@ function settingsPathFor(role: string) {
 }
 
 export async function disconnectGoogleCalendar() {
-  const user = await requireUser();
+  const user = await requireUser({ write: true });
   const db = await live();
   await db.user.update({
     where: { id: user.id },
