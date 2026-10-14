@@ -61,7 +61,7 @@ export function SelectWithOther({
       {needsOther ? (
         <>
           <label className="label mt-3" htmlFor={`${id}Other`}>
-            Other — tell us what fits
+            Other - tell us what fits
           </label>
           <input
             id={`${id}Other`}

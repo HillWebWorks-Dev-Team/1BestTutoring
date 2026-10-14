@@ -2,7 +2,6 @@ import { GoogleCalendarConnect } from "@/components/dashboard/GoogleCalendarConn
 import { Notice } from "@/components/ui";
 import { GRADE_LEVELS, SUBJECTS, TIMEZONES } from "@/lib/brand";
 import { splitList } from "@/lib/brand";
-import { money } from "@/lib/format";
 import { googleConfigured } from "@/lib/google";
 import { requireUser } from "@/lib/session";
 import { updateStudentSettings } from "@/server/learning";
@@ -78,30 +77,6 @@ export default async function SettingsPage({
           </label>
           <button className="btn btn-primary w-fit" type="submit">Save settings</button>
         </form>
-        <section className="card p-5">
-          <p className="kicker">Referrals</p>
-          <h2 className="mt-2 font-serif text-3xl">Invite friends</h2>
-          <p className="mt-2 text-sm leading-6 text-mute">
-            Share your code. When someone you invite books their first paid session, you both get tutoring credit
-            (applied automatically at checkout, from the platform fee — tutors still earn their full share).
-          </p>
-          <dl className="mt-4 grid gap-3 text-sm">
-            <div className="flex items-baseline justify-between gap-3 border-b border-line pb-2">
-              <dt className="text-mute">Your code</dt>
-              <dd className="font-semibold tracking-wide text-navy">{profile?.referralCode}</dd>
-            </div>
-            <div className="flex items-baseline justify-between gap-3 border-b border-line pb-2">
-              <dt className="text-mute">Credit balance</dt>
-              <dd className="font-semibold text-navy">{money(profile?.creditBalanceCents || 0)}</dd>
-            </div>
-            <div className="flex items-baseline justify-between gap-3">
-              <dt className="text-mute">Share link</dt>
-              <dd className="text-right font-medium text-navy break-all">
-                /register?ref={profile?.referralCode}
-              </dd>
-            </div>
-          </dl>
-        </section>
       </div>
     </div>
   );

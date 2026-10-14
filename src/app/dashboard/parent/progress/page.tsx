@@ -226,7 +226,7 @@ export default async function ParentProgress({
                 </div>
               ) : (
                 <p className="mt-4 text-sm leading-6 text-mute">
-                  Tutors can log metrics here after sessions — accuracy, timed-set scores, or writing targets.
+                  Tutors can log metrics here after sessions - accuracy, timed-set scores, or writing targets.
                 </p>
               )}
             </article>

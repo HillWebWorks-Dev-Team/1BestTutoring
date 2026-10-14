@@ -48,7 +48,7 @@ export default async function StudentReviewsPage({
 
       <div className="mt-4">
         <Notice
-          success={query.reviewed ? "Thanks — your review is live on the tutor’s profile." : undefined}
+          success={query.reviewed ? "Thanks - your review is live on the tutor’s profile." : undefined}
           error={query.error}
         />
       </div>

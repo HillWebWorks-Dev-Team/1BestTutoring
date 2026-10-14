@@ -177,7 +177,7 @@ export function RetentionRing({
           <MetricRow label="Returning students" value={String(returning)} detail={`of ${active} with a paid session`} />
           <MetricRow
             label="Consult → match"
-            value={consultTotal ? `${conversionRate}%` : "—"}
+            value={consultTotal ? `${conversionRate}%` : "-"}
             detail={consultTotal ? `${converted} of ${consultTotal} consult pairs assigned` : "No consults yet"}
           />
         </div>

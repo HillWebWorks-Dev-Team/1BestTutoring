@@ -9,7 +9,7 @@ Use the **markdown** file, not the PDF:
 3. Attach / `@` **`CURSOR_HANDOFF.md`** (source of truth)
 4. Optionally paste the short prompt below
 
-`CURSOR_HANDOFF.pdf` is a snapshot only — it can be outdated or hard for Cursor to read. Prefer **`CURSOR_HANDOFF.md`**.
+`CURSOR_HANDOFF.pdf` is a snapshot only - it can be outdated or hard for Cursor to read. Prefer **`CURSOR_HANDOFF.md`**.
 
 ---
 
@@ -35,7 +35,7 @@ Ask me which checklist to start with if unclear.
 ```bash
 git pull origin main
 npm install
-cp .env.example .env   # only if .env missing — then fill secrets from password manager
+cp .env.example .env   # only if .env missing - then fill secrets from password manager
 npx prisma db push     # only if schema is behind
 npm run dev
 ```

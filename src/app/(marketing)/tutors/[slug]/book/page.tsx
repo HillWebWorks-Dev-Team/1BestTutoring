@@ -57,7 +57,7 @@ export default async function BookPage({
   const creditBalance = bookingStudent?.creditBalanceCents || 0;
   const creditBalanceLabel =
     type === "SESSION" && creditBalance > 0
-      ? `${money(creditBalance)} referral credit available — applied automatically at checkout (up to the platform fee; tutor rate stays the same).`
+      ? `${money(creditBalance)} referral credit available - applied automatically at checkout (up to the platform fee; tutor rate stays the same).`
       : undefined;
   const assigned = canBookPaidSession(assignment?.status === "ACTIVE");
   const payable = tutorCanAcceptPayments(tutor, paymentsMode());

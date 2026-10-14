@@ -27,7 +27,7 @@ export function BookingCalendar({
   rescheduleId?: string;
   studentId?: string;
   lockedReason?: string;
-  /** e.g. "$15.00 available — applied automatically at checkout (up to platform fee)" */
+  /** e.g. "$15.00 available - applied automatically at checkout (up to platform fee)" */
   creditBalanceLabel?: string;
 }) {
   const [cursor, setCursor] = useState(() => DateTime.now().setZone(tutorTimeZone).startOf("month"));
@@ -78,7 +78,7 @@ export function BookingCalendar({
   const today = DateTime.now().setZone(tutorTimeZone).startOf("day");
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+    <div className="grid items-start gap-6 lg:grid-cols-[1.1fr_0.9fr]">
       <div className="card p-5">
         <div className="mb-4 flex items-center justify-between">
           <button className="btn btn-line" type="button" onClick={() => setCursor(cursor.minus({ months: 1 }))}>
@@ -119,41 +119,57 @@ export function BookingCalendar({
           Dates follow the tutor’s calendar ({tutorTimeZone.replaceAll("_", " ")}). Times below are shown in yours ({viewerTimeZone.replaceAll("_", " ")}).
         </p>
       </div>
-      <div className="card flex flex-col p-5">
-        <p className="kicker">{type === "CONSULTATION" ? "15 minutes · free" : priceLabel}</p>
-        <h2 className="mt-2 font-serif text-3xl">{date ? DateTime.fromISO(date).toFormat("cccc, LLL d") : "Choose a date"}</h2>
-        {type === "SESSION" && creditBalanceLabel ? (
-          <p className="mt-3 rounded-xl border border-gold/35 bg-cream/40 px-3 py-2.5 text-sm leading-6 text-navy">
-            {creditBalanceLabel}
-          </p>
-        ) : null}
-        {lockedReason ? (
-          <p className="mt-4 rounded-xl border border-[#e7c7c2] bg-[#fbf1ef] px-3 py-3 text-sm leading-6 text-[#7d332c]">
-            {lockedReason}
-          </p>
-        ) : null}
-        <div className="mt-5 grid grid-cols-2 gap-2">
-          {loading ? (
-            <p className="col-span-2 inline-flex items-center gap-2 text-sm text-mute">
-              <Spinner className="h-4 w-4" />
-              Checking the calendar…
+      <div className="card flex min-h-0 flex-col p-5 lg:max-h-full">
+        <div className="shrink-0">
+          <p className="kicker">{type === "CONSULTATION" ? "15 minutes · free" : priceLabel}</p>
+          <h2 className="mt-2 font-serif text-3xl">
+            {date ? DateTime.fromISO(date).toFormat("cccc, LLL d") : "Choose a date"}
+          </h2>
+          {type === "SESSION" && creditBalanceLabel ? (
+            <p className="mt-3 rounded-xl border border-gold/35 bg-cream/40 px-3 py-2.5 text-sm leading-6 text-navy">
+              {creditBalanceLabel}
             </p>
           ) : null}
-          {!loading && date && slots.length === 0 ? <p className="col-span-2 text-sm text-mute">No open times on this date.</p> : null}
-          {slots.map((slot) => (
-            <button
-              key={slot}
-              type="button"
-              onClick={() => setSelected(slot)}
-              disabled={Boolean(lockedReason)}
-              className={`rounded-xl border px-3 py-3 text-sm ${selected === slot ? "border-gold bg-navy text-ivory" : "border-line bg-white"} disabled:cursor-not-allowed disabled:opacity-50`}
-            >
-              {formatTime(new Date(slot), viewerTimeZone)}
-            </button>
-          ))}
+          {lockedReason ? (
+            <p className="mt-4 rounded-xl border border-[#e7c7c2] bg-[#fbf1ef] px-3 py-3 text-sm leading-6 text-[#7d332c]">
+              {lockedReason}
+            </p>
+          ) : null}
         </div>
-        {error ? <p className="mt-4 text-sm text-[#7d332c]">{error}</p> : null}
-        <button className="btn btn-primary mt-auto" type="button" disabled={!selected || pending || Boolean(lockedReason)} onClick={confirm} aria-busy={pending}>
+
+        <div className="mt-5 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+          <div className="grid grid-cols-2 gap-2 pb-2">
+            {loading ? (
+              <p className="col-span-2 inline-flex items-center gap-2 text-sm text-mute">
+                <Spinner className="h-4 w-4" />
+                Checking the calendar…
+              </p>
+            ) : null}
+            {!loading && date && slots.length === 0 ? (
+              <p className="col-span-2 text-sm text-mute">No open times on this date.</p>
+            ) : null}
+            {slots.map((slot) => (
+              <button
+                key={slot}
+                type="button"
+                onClick={() => setSelected(slot)}
+                disabled={Boolean(lockedReason)}
+                className={`rounded-xl border px-3 py-3 text-sm ${selected === slot ? "border-gold bg-navy text-ivory" : "border-line bg-white"} disabled:cursor-not-allowed disabled:opacity-50`}
+              >
+                {formatTime(new Date(slot), viewerTimeZone)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {error ? <p className="mt-3 shrink-0 text-sm text-[#7d332c]">{error}</p> : null}
+        <button
+          className="btn btn-primary mt-4 shrink-0"
+          type="button"
+          disabled={!selected || pending || Boolean(lockedReason)}
+          onClick={confirm}
+          aria-busy={pending}
+        >
           {pending ? (
             <span className="inline-flex items-center gap-2">
               <Spinner className="h-4 w-4" />

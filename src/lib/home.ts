@@ -78,5 +78,5 @@ const cachedHomePayload = unstable_cache(loadHomePayload, ["home-payload-v2"], {
   tags: ["home"],
 });
 
-/** Public homepage data — request-deduped + cached across refreshes. */
+/** Public homepage data - request-deduped + cached across refreshes. */
 export const getHomePayload = cache(() => cachedHomePayload());

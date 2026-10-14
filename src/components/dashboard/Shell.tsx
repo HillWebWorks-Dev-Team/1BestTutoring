@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Logo } from "@/components/brand";
-import { logout } from "@/server/auth";
+import { SignOutButton } from "@/components/dashboard/SignOutButton";
 import { stopImpersonation } from "@/server/impersonation";
 
 export type DashLink = { href: string; label: string; locked?: boolean; badge?: number };
@@ -81,11 +81,9 @@ export function DashboardShell({
                 </button>
               </form>
             ) : null}
-            <form action={logout} className="mt-3">
-              <button className="text-sm text-ivory/60" type="submit">
-                Sign out
-              </button>
-            </form>
+            <div className="mt-3">
+              <SignOutButton />
+            </div>
           </div>
         </div>
       </aside>

@@ -38,7 +38,7 @@ export function renderBrandedEmail(input: {
   ctaLabel?: string;
 }) {
   const base = appUrl();
-  // Email clients can't load images from localhost — prefer a public host for assets in local/dev.
+  // Email clients can't load images from localhost - prefer a public host for assets in local/dev.
   const assetBase =
     process.env.EMAIL_ASSET_BASE_URL?.replace(/\/$/, "") ||
     (base.includes("localhost") || base.includes("127.0.0.1")
@@ -121,7 +121,7 @@ export function renderBrandedEmail(input: {
     input.body,
     actionUrl ? `\n${cta}: ${actionUrl}` : "",
     "",
-    `${BRAND.name} — ${BRAND.tagline}`,
+    `${BRAND.name} - ${BRAND.tagline}`,
   ]
     .filter(Boolean)
     .join("\n");

@@ -54,6 +54,7 @@ function linksFor(role: string, pendingTutor: boolean, unreadMessages = 0): Dash
     { href: "/dashboard/student/homework", label: "Homework" },
     { href: "/dashboard/student/progress", label: "Learning progress" },
     { href: "/dashboard/student/payments", label: "Payments" },
+    { href: "/dashboard/student/referrals", label: "Referrals" },
     { href: "/dashboard/student/settings", label: "Settings" },
   ];
 }

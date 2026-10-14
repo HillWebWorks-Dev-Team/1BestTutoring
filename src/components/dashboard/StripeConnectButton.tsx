@@ -55,7 +55,7 @@ function ConnectSubmit({ label }: { label: string }) {
                   Setting up payouts
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-mute">
-                  Hang tight — we’ll send you to Stripe to finish identity and banking details. Don’t close this tab.
+                  Hang tight - we’ll send you to Stripe to finish identity and banking details. Don’t close this tab.
                 </p>
               </div>
             </div>

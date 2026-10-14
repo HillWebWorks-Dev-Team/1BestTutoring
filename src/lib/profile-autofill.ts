@@ -49,7 +49,7 @@ function findUniversity(text: string) {
   const lower = text.toLowerCase();
   return UNIVERSITIES.find((school) => {
     if (lower.includes(school.name.toLowerCase())) return true;
-    // Word-boundary match for shorts — avoids "MIT" matching inside "permit".
+    // Word-boundary match for shorts - avoids "MIT" matching inside "permit".
     const short = school.short.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     return new RegExp(`(?:^|[^a-z0-9])${short}(?:[^a-z0-9]|$)`, "i").test(text);
   });

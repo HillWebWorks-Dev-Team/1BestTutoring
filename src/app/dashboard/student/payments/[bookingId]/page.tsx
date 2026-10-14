@@ -66,7 +66,7 @@ export default async function PaymentReceiptPage({ params }: { params: Promise<{
         </div>
 
         <p className="mt-6 text-xs leading-5 text-mute">
-          {demo ? "Demo mode — no card was charged. " : ""}
+          {demo ? "Demo mode - no card was charged. " : ""}
           Keep this for your records. Contact support if you have a billing question.
         </p>
       </article>

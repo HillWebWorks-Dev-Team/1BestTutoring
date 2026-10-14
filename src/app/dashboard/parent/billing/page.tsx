@@ -75,7 +75,7 @@ export default async function ParentBilling({
           <p className="kicker">Family billing</p>
           <h1 className="mt-2 font-serif text-5xl">Payments</h1>
           <p className="mt-2 max-w-xl text-sm leading-6 text-mute">
-            Pay per hour for linked students — no subscription. Filter by card, then open a receipt to print or save.
+            Pay per hour for linked students - no subscription. Filter by card, then open a receipt to print or save.
           </p>
         </div>
       </div>
@@ -177,7 +177,7 @@ export default async function ParentBilling({
                           Receipt
                         </Link>
                       ) : (
-                        <span className="text-sm text-mute">—</span>
+                        <span className="text-sm text-mute">-</span>
                       )}
                     </div>
                   </li>

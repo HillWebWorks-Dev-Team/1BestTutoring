@@ -68,7 +68,7 @@ export default async function TutorProfilePage({
       <div className="order-2 min-w-0 space-y-10 lg:order-1">
         <Notice
           error={query.error}
-          success={query.reviewed ? "Thanks — your review is live on this profile." : undefined}
+          success={query.reviewed ? "Thanks - your review is live on this profile." : undefined}
         />
         <section>
           <p className="kicker">Biography</p>

@@ -25,7 +25,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
         <input className="field" name="sessionMinutes" type="number" defaultValue={settings.sessionMinutes} />
         <label className="label">Free-cancel window (hours)</label>
         <input className="field" name="cancelWindowHours" type="number" defaultValue={settings.cancelWindowHours} />
-        <label className="label">Referral reward — referrer (USD)</label>
+        <label className="label">Referral reward - referrer (USD)</label>
         <input
           className="field"
           name="referrerCredit"
@@ -34,7 +34,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
           step="1"
           defaultValue={settings.referralReferrerCreditCents / 100}
         />
-        <label className="label">Referral reward — new student (USD)</label>
+        <label className="label">Referral reward - new student (USD)</label>
         <input
           className="field"
           name="refereeCredit"
@@ -45,7 +45,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
         />
         <p className="text-xs text-mute">
           Credits grant after a referred student’s first paid session. They reduce what the family pays and come from
-          platform commission — tutor payouts stay whole. Fee policy: {settings.feePolicy}.
+          platform commission - tutor payouts stay whole. Fee policy: {settings.feePolicy}.
         </p>
         <button className="btn btn-primary w-fit" type="submit">Save</button>
       </form>

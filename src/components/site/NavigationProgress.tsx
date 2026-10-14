@@ -60,6 +60,7 @@ const PAGE_LABELS: Record<string, string> = {
   payments: "Payments",
   profile: "Profile",
   progress: "Progress",
+  referrals: "Referrals",
   reviews: "Reviews",
   safety: "Safety",
   sessions: "Sessions",
@@ -116,6 +117,7 @@ export function NavigationProgress() {
   const pendingRef = useRef(false);
   const hideTimer = useRef<number | null>(null);
   const safetyTimer = useRef<number | null>(null);
+  const settleTimer = useRef<number | null>(null);
   const stepTimers = useRef<number[]>([]);
   const progressTimers = useRef<number[]>([]);
   const key = `${pathname}?${searchParams.toString()}`;
@@ -123,23 +125,34 @@ export function NavigationProgress() {
   function clearTimers() {
     if (hideTimer.current) window.clearTimeout(hideTimer.current);
     if (safetyTimer.current) window.clearTimeout(safetyTimer.current);
+    if (settleTimer.current) window.clearTimeout(settleTimer.current);
     stepTimers.current.forEach((timer) => window.clearTimeout(timer));
     progressTimers.current.forEach((timer) => window.clearTimeout(timer));
     hideTimer.current = null;
     safetyTimer.current = null;
+    settleTimer.current = null;
     stepTimers.current = [];
     progressTimers.current = [];
   }
 
-  function finishLoading() {
+  function clearOverlay() {
     pendingRef.current = false;
     clearTimers();
+    setProgress(0);
+    setModal(null);
+    document.body.style.overflow = "";
+  }
+
+  function finishAfterPaint() {
+    if (!pendingRef.current) return;
     setProgress(100);
-    hideTimer.current = window.setTimeout(() => {
-      setModal(null);
-      setProgress(0);
-      document.body.style.overflow = "";
-    }, 180);
+    // Pathname updates before the new RSC payload paints - wait so we don't
+    // flash the old screen with the overlay already gone.
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        settleTimer.current = window.setTimeout(() => clearOverlay(), 280);
+      });
+    });
   }
 
   useEffect(() => {
@@ -164,18 +177,11 @@ export function NavigationProgress() {
 
       clearTimers();
       pendingRef.current = true;
+      setProgress(18);
 
       const copy = isBookingPath(url) ? bookingCopy(url) : generalCopy(url);
       setModal({ ...copy, step: 0 });
-      setProgress(18);
       document.body.style.overflow = "hidden";
-
-      progressTimers.current = [
-        window.setTimeout(() => setProgress(42), 180),
-        window.setTimeout(() => setProgress(68), 500),
-        window.setTimeout(() => setProgress(86), 1100),
-      ];
-
       if (copy.steps?.length) {
         stepTimers.current = [
           window.setTimeout(() => setModal((current) => (current ? { ...current, step: 1 } : current)), 700),
@@ -183,12 +189,18 @@ export function NavigationProgress() {
         ];
       }
 
-      // Never leave the modal stuck if the route hangs or finishes before state commits.
-      safetyTimer.current = window.setTimeout(() => finishLoading(), 6_000);
+      progressTimers.current = [
+        window.setTimeout(() => setProgress(42), 160),
+        window.setTimeout(() => setProgress(68), 480),
+        window.setTimeout(() => setProgress(86), 1000),
+      ];
+
+      // True hang safety only - do not clear while navigation is still in flight.
+      safetyTimer.current = window.setTimeout(() => clearOverlay(), 20_000);
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && pendingRef.current) finishLoading();
+      if (event.key === "Escape" && pendingRef.current) clearOverlay();
     };
 
     document.addEventListener("click", onClick, true);
@@ -204,8 +216,7 @@ export function NavigationProgress() {
 
   useEffect(() => {
     if (!pendingRef.current) return;
-    finishLoading();
-    // Complete when the destination route finishes rendering.
+    finishAfterPaint();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
@@ -275,10 +286,6 @@ export function NavigationProgress() {
             })}
           </ol>
         ) : null}
-
-        <button type="button" className="btn btn-line mt-5 w-full whitespace-nowrap" onClick={finishLoading}>
-          Continue
-        </button>
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ export type University = {
   short: string;
   mark: string;
   group: "Ivy League" | "Top 30";
-  /** Public path under /univ-logos — sourced from public/univ logo */
+  /** Public path under /univ-logos - sourced from public/univ logo */
   logo?: string;
 };
 

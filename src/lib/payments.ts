@@ -10,7 +10,7 @@ export function splitAmount(priceCents: number, commissionPercent: number) {
 
 /**
  * Apply student referral credit as a platform subsidy.
- * Never reduces tutor share — credit is capped at platform commission.
+ * Never reduces tutor share - credit is capped at platform commission.
  */
 export function applySessionCredit(options: {
   priceCents: number;

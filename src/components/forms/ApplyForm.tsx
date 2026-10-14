@@ -24,21 +24,21 @@ import { applyAsTutor } from "@/server/apply";
 import { parseLinkedInTextForAutofill, parseResumeForAutofill } from "@/server/autofill";
 
 type Defaults = {
-  name?: string;
-  email?: string;
-  university?: string;
-  major?: string;
-  degree?: string;
-  graduationYear?: number;
-  bio?: string;
-  experience?: string;
+    name?: string;
+    email?: string;
+    university?: string;
+    major?: string;
+    degree?: string;
+    graduationYear?: number;
+    bio?: string;
+    experience?: string;
   education?: string;
   achievements?: string;
   certifications?: string;
   testScores?: string;
-  subjects?: string[];
-  gradeLevels?: string[];
-  hourlyRate?: number;
+    subjects?: string[];
+    gradeLevels?: string[];
+    hourlyRate?: number;
   linkedinUrl?: string;
 };
 
@@ -154,7 +154,7 @@ function ApplySubmitFooter() {
                   Submitting your application
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-mute">
-                  Hang tight — we’re saving your details and sending them to the review queue. Don’t close this tab.
+                  Hang tight - we’re saving your details and sending them to the review queue. Don’t close this tab.
                 </p>
               </div>
             </div>
@@ -681,7 +681,7 @@ export function ApplyForm({
             name="subjectsOther"
             value={subjectsOther}
             onChange={(event) => setSubjectsOther(event.target.value)}
-            placeholder="e.g. Music theory, Organic chemistry, LSAT — separate with commas"
+            placeholder="e.g. Music theory, Organic chemistry, LSAT - separate with commas"
           />
         </div>
         <div>
@@ -689,13 +689,13 @@ export function ApplyForm({
             Grade levels
             <RequiredMark />
           </p>
-          <div className="mt-2 flex flex-wrap gap-4 text-sm">
-            {GRADE_LEVELS.map((level) => (
-              <label key={level} className="flex items-center gap-2">
+        <div className="mt-2 flex flex-wrap gap-4 text-sm">
+          {GRADE_LEVELS.map((level) => (
+            <label key={level} className="flex items-center gap-2">
                 <input type="checkbox" name="gradeLevels" value={level} checked={values.gradeLevels?.includes(level) || false} onChange={() => toggleList("gradeLevels", level)} />
-                {level}
-              </label>
-            ))}
+              {level}
+            </label>
+          ))}
           </div>
           <label className="label mt-3" htmlFor="gradeLevelsOther">
             Other grade levels
@@ -706,7 +706,7 @@ export function ApplyForm({
             name="gradeLevelsOther"
             value={gradeLevelsOther}
             onChange={(event) => setGradeLevelsOther(event.target.value)}
-            placeholder="e.g. Homeschool, Adult learner — separate with commas"
+            placeholder="e.g. Homeschool, Adult learner - separate with commas"
           />
         </div>
       </fieldset>

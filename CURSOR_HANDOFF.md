@@ -1,4 +1,4 @@
-# Cursor handoff — 1% Better Tutoring
+# Cursor handoff - 1% Better Tutoring
 
 Paste this (or `@CURSOR_HANDOFF.md`) into a new Cursor chat after `git pull`.
 
@@ -19,7 +19,7 @@ Product work completed through Phase 2 items **#1–#7**. Summary for the boss /
 | **Parent tools (#4)** | Full family desk: book/pay with `studentId` continuity, billing + receipts, rich progress (homework/goals/metrics), settings, parent redirects + notifications |
 | **Referral rewards (#5)** | Credit balance + ledger; grant $15/$15 (admin-configurable) after referred student’s first paid session; auto-apply at checkout from **platform fee only**; student Settings share UI |
 | **Reviews / trust (#6)** | “Awaiting your review” on student home; clearer review form; notify after session report; verified badges; admin publish/hide at `/dashboard/admin/reviews` |
-| **Admin analytics (#7)** | `/dashboard/admin/analytics` — revenue charts, consult/session mix, retention ring; linked from overview + payments |
+| **Admin analytics (#7)** | `/dashboard/admin/analytics` - revenue charts, consult/session mix, retention ring; linked from overview + payments |
 | **Handoff / quality** | Schema pushed to Supabase; `npm test` **18/18**; handoff doc kept current |
 
 **Not done in code this stretch:** production go-live cutover (keys, domain email, cron on Vercel), Phase 3 features, optional parent messaging/multi-guardian.
@@ -28,12 +28,12 @@ Product work completed through Phase 2 items **#1–#7**. Summary for the boss /
 
 ## What still needs to be done
 
-### Next: #8 Go-live (ops / config — needs secrets + DNS)
+### Next: #8 Go-live (ops / config - needs secrets + DNS)
 1. Production Stripe **live** keys + Connect live mode; keep `PAYMENTS_MODE=stripe`
 2. Stripe production webhook → `https://<prod-host>/api/stripe/webhook` + matching `STRIPE_WEBHOOK_SECRET`
 3. Resend: **verify sending domain** (see Email section below); stop using `onboarding@resend.dev`
 4. Set production `EMAIL_FROM` (target: `1% Better Tutoring <hello@onepercentbetter.com>`)
-5. Set `CRON_SECRET`; ensure Vercel Cron hits `/api/cron/reminders` (hourly — plan must allow hourly crons)
+5. Set `CRON_SECRET`; ensure Vercel Cron hits `/api/cron/reminders` (hourly - plan must allow hourly crons)
 6. Production `NEXT_PUBLIC_APP_URL`; Google OAuth redirect URIs include prod `/api/calendar/google/callback`
 7. Production smoke: register → consult → assign → paid session → Zoom → email → Connect payout → reminder
 
@@ -50,17 +50,17 @@ Product work completed through Phase 2 items **#1–#7**. Summary for the boss /
 
 ## What we need (email, domains, accounts)
 
-Bring these from the teammate / password manager — **never commit `.env`**.
+Bring these from the teammate / password manager - **never commit `.env`**.
 
 ### Email (Resend)
 | Need | Detail |
 |------|--------|
 | `RESEND_API_KEY` | Already used in test; keep for prod |
 | **Domain verification** | Add `onepercentbetter.com` (or chosen domain) in Resend → Domains; DNS TXT/DKIM/SPF as Resend shows |
-| `EMAIL_FROM` | Local/test today: `1% Better Tutoring <onboarding@resend.dev>` (Resend sandbox — can only send to verified recipient emails in some plans) |
+| `EMAIL_FROM` | Local/test today: `1% Better Tutoring <onboarding@resend.dev>` (Resend sandbox - can only send to verified recipient emails in some plans) |
 | **Production from** | Target: `1% Better Tutoring <hello@onepercentbetter.com>` (must match verified domain) |
 | Inbox to monitor | `hello@onepercentbetter.com` (or support alias) for contact/safety replies outside the app |
-| What emails fire | Booking confirm, cancel/reschedule, payment received, session report, review prompt, referral credit, application status, session reminders (cron) — all via `src/lib/notify.ts` → Resend when key set |
+| What emails fire | Booking confirm, cancel/reschedule, payment received, session report, review prompt, referral credit, application status, session reminders (cron) - all via `src/lib/notify.ts` → Resend when key set |
 
 Until the domain is verified, treat email as **dev-only**: use `onboarding@resend.dev` and confirm Resend dashboard delivery; don’t expect reliable mail to arbitrary parent/student addresses.
 
@@ -154,7 +154,7 @@ Demo password for all seed accounts: **`OnePercent!2026`**
 npm install
 cp .env.example .env   # fill secrets
 npx prisma db push
-npm run db:seed        # optional; wipes/recreates demo data — ask before shared DB
+npm run db:seed        # optional; wipes/recreates demo data - ask before shared DB
 npm run dev
 npm test               # expect 18/18
 ```

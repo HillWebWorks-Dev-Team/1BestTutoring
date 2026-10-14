@@ -228,7 +228,7 @@ export default async function BookingSummaryPage({
 
           <p className="mt-5 text-xs leading-5 text-mute">
             Booking ID: {booking.id}
-            {demo && booking.type === "SESSION" ? " · Demo mode — no card was charged." : ""}
+            {demo && booking.type === "SESSION" ? " · Demo mode - no card was charged." : ""}
           </p>
         </div>
       </article>

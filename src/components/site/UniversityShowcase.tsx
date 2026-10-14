@@ -15,7 +15,7 @@ function brandedSchools(): University[] {
   return [...withoutHarvard.slice(0, mid), harvard, ...withoutHarvard.slice(mid)];
 }
 
-/** Always shows branded school logos — not gated on approved tutor applications. */
+/** Always shows branded school logos - not gated on approved tutor applications. */
 export function UniversityShowcase() {
   const ordered = brandedSchools();
 

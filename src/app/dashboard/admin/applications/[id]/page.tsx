@@ -82,19 +82,19 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
         </div>
         <div>
           <dt className="text-mute">Education</dt>
-          <dd className="mt-1 leading-6 text-navy">{tutor.education || "—"}</dd>
+          <dd className="mt-1 leading-6 text-navy">{tutor.education || "-"}</dd>
         </div>
         <div>
           <dt className="text-mute">Achievements</dt>
-          <dd className="mt-1 leading-6 text-navy">{tutor.achievements || "—"}</dd>
+          <dd className="mt-1 leading-6 text-navy">{tutor.achievements || "-"}</dd>
         </div>
         <div>
           <dt className="text-mute">Certifications</dt>
-          <dd className="mt-1 leading-6 text-navy">{tutor.certifications || "—"}</dd>
+          <dd className="mt-1 leading-6 text-navy">{tutor.certifications || "-"}</dd>
         </div>
         <div>
           <dt className="text-mute">Test scores</dt>
-          <dd className="mt-1 leading-6 text-navy">{tutor.testScores || "—"}</dd>
+          <dd className="mt-1 leading-6 text-navy">{tutor.testScores || "-"}</dd>
         </div>
         <div className="sm:col-span-2">
           <dt className="text-mute">Availability notes</dt>

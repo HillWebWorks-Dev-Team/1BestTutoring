@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 const STATUS = {
   ASSIGNED: { label: "To do", tone: "bg-navy text-ivory", bar: "bg-navy", hint: "Assigned and waiting on you", progress: 33 },
-  SUBMITTED: { label: "Submitted", tone: "bg-gold text-deep", bar: "bg-gold", hint: "Sent — awaiting tutor feedback", progress: 66 },
+  SUBMITTED: { label: "Submitted", tone: "bg-gold text-deep", bar: "bg-gold", hint: "Sent - awaiting tutor feedback", progress: 66 },
   REVIEWED: { label: "Reviewed", tone: "bg-cream text-navy border border-line", bar: "bg-gold", hint: "Feedback is ready", progress: 100 },
 } as const;
 
@@ -190,7 +190,7 @@ export default async function StudentProgress() {
               ))}
             </div>
           ) : (
-            <p className="mt-4 text-sm leading-6 text-mute">Your tutors can log metrics here after sessions — for example accuracy, timed-set scores, or writing targets.</p>
+            <p className="mt-4 text-sm leading-6 text-mute">Your tutors can log metrics here after sessions - for example accuracy, timed-set scores, or writing targets.</p>
           )}
         </article>
       </section>

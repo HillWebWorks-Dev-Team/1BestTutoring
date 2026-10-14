@@ -15,7 +15,7 @@ const response = await fetch("https://api.resend.com/emails", {
   body: JSON.stringify({
     from: process.env.EMAIL_FROM,
     to: ["delivered@resend.dev"],
-    subject: "1% Better Tutoring — Resend test",
+    subject: "1% Better Tutoring - Resend test",
     text: "Resend is connected for 1% Better Tutoring.",
   }),
 });

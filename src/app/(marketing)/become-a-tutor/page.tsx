@@ -94,7 +94,7 @@ export default async function BecomeTutorPage() {
             <ul className="mt-8 space-y-3 text-sm leading-6 text-mute">
               <li className="flex gap-2">
                 <span className="mt-2 h-1.5 w-1.5 shrink-0 bg-gold" aria-hidden />
-                University names describe where you studied — not an endorsement.
+                University names describe where you studied - not an endorsement.
               </li>
               <li className="flex gap-2">
                 <span className="mt-2 h-1.5 w-1.5 shrink-0 bg-gold" aria-hidden />

@@ -198,14 +198,17 @@ export default async function ParentHome({
                     <li className="text-mute">No tutor assigned yet. You can still book a free consultation.</li>
                   ) : null}
                 </ul>
-                <div className="mt-4 flex flex-wrap gap-3 text-sm">
-                  <Link className="font-medium text-navy underline-offset-2 hover:underline" href={`/dashboard/parent/progress?studentId=${student.id}`}>
+                <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
+                  <Link
+                    className="btn btn-line !px-3 !py-2 text-sm"
+                    href={`/dashboard/parent/progress?studentId=${student.id}`}
+                  >
                     Progress
                   </Link>
-                  <Link className="font-medium text-navy underline-offset-2 hover:underline" href="/dashboard/parent/billing">
+                  <Link className="btn btn-line !px-3 !py-2 text-sm" href="/dashboard/parent/billing">
                     Billing
                   </Link>
-                  <Link className="font-medium text-navy underline-offset-2 hover:underline" href="/dashboard/parent/calendar">
+                  <Link className="btn btn-line !px-3 !py-2 text-sm" href="/dashboard/parent/calendar">
                     Calendar
                   </Link>
                 </div>

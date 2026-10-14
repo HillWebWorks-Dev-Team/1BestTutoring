@@ -116,7 +116,7 @@ export function SessionList({
             ) : null}
 
             {role === "STUDENT" && item.type === "SESSION" && item.hasReview ? (
-              <p className="mt-3 border-t border-line pt-3 text-sm text-mute">Thanks — your review is published.</p>
+              <p className="mt-3 border-t border-line pt-3 text-sm text-mute">Thanks - your review is published.</p>
             ) : null}
 
             {role === "STUDENT" &&

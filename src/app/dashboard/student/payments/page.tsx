@@ -64,7 +64,7 @@ export default async function PaymentsPage({
           <p className="kicker">Billing</p>
           <h1 className="mt-2 font-serif text-5xl">Payments</h1>
           <p className="mt-2 max-w-xl text-sm leading-6 text-mute">
-            Pay per hour — no subscription. Click a summary card to filter the list, then open a receipt to print or save.
+            Pay per hour - no subscription. Click a summary card to filter the list, then open a receipt to print or save.
           </p>
         </div>
       </div>
@@ -151,7 +151,7 @@ export default async function PaymentsPage({
                           Receipt
                         </Link>
                       ) : (
-                        <span className="text-sm text-mute">—</span>
+                        <span className="text-sm text-mute">-</span>
                       )}
                     </div>
                   </li>

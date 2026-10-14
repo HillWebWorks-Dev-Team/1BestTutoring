@@ -276,7 +276,7 @@ async function main() {
     },
   });
   const jordanUser = await prisma.user.findUniqueOrThrow({ where: { email: "jordan@onepercentbetter.com" } });
-  // No seeded/demo reviews — homepage and profiles only show real student feedback.
+  // No seeded/demo reviews - homepage and profiles only show real student feedback.
   await prisma.progressNote.create({
     data: {
       studentId: jordan.id,

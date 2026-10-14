@@ -61,7 +61,7 @@ async function main() {
     return;
   }
 
-  // ParentProfile has no ON DELETE from StudentProfile.parentId — unlink first.
+  // ParentProfile has no ON DELETE from StudentProfile.parentId - unlink first.
   if (parentIds.length) {
     await prisma.studentProfile.updateMany({
       where: { parentId: { in: parentIds } },

@@ -13,7 +13,7 @@ export default function AboutPage() {
             A tutoring company with the manners of a good school.
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-ivory/75">
-            Steady academic progress with tutors who have actually done the work — reviewed by us before they appear in
+            Steady academic progress with tutors who have actually done the work - reviewed by us before they appear in
             the directory.
           </p>
         </div>
@@ -29,7 +29,7 @@ export default function AboutPage() {
             </p>
             <p>
               The name is the method. We are not interested in theatrical transformations. We are interested in the next
-              clean hour — a concept that sticks, a paper that gets sharper, a score that moves because the practice did.
+              clean hour - a concept that sticks, a paper that gets sharper, a score that moves because the practice did.
             </p>
             <p>
               Students can browse and book a free consultation on their own. Ongoing tutoring starts only when our team
@@ -65,7 +65,7 @@ export default function AboutPage() {
               ],
               [
                 "Phase 3",
-                "Smarter tutor recommendations, AI practice tools, and group sessions — after the human match is trustworthy.",
+                "Smarter tutor recommendations, AI practice tools, and group sessions - after the human match is trustworthy.",
               ],
             ].map(([title, body]) => (
               <article key={title} className="border border-line bg-ivory/40 p-5">

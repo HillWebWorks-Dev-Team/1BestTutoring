@@ -96,7 +96,7 @@ export default async function AdminHome({
         <Stat label="Consults held" value={String(consults.length)} />
         <Stat
           label="Consult conversion"
-          value={consults.length ? `${Math.round((converted / consults.length) * 100)}%` : "—"}
+          value={consults.length ? `${Math.round((converted / consults.length) * 100)}%` : "-"}
         />
         <Stat label="Hours completed" value={Number.isFinite(hours) ? hours.toFixed(1) : "0.0"} />
         <Stat label="This month" value={money(monthRevenue)} />

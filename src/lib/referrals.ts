@@ -158,7 +158,7 @@ export async function grantReferralRewards(options: {
       type: "REFERRAL",
       title: "Referral credit earned",
       body: `${money(referrerCredit)} tutoring credit for inviting ${referee.user.name}. It applies automatically on the next paid session.`,
-      href: "/dashboard/student/settings",
+      href: "/dashboard/student/referrals",
     });
   }
   if (refereeCredit) {
@@ -168,7 +168,7 @@ export async function grantReferralRewards(options: {
       type: "REFERRAL",
       title: "Welcome credit added",
       body: `${money(refereeCredit)} tutoring credit is on your account for your next paid session.`,
-      href: "/dashboard/student/settings",
+      href: "/dashboard/student/referrals",
     });
   }
 }

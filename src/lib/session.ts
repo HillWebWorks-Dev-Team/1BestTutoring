@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { live } from "./live";
 
 export type SessionPayload = {
@@ -70,7 +71,8 @@ export async function clearSessionCookie() {
   jar.delete(COOKIE);
 }
 
-export async function getSession() {
+/** Per-request memo - layout + page share one cookie/JWT read. */
+export const getSession = cache(async () => {
   const jar = await cookies();
   const token = jar.get(COOKIE)?.value;
   if (!token) return null;
@@ -79,7 +81,24 @@ export async function getSession() {
   } catch {
     return null;
   }
+});
+
+async function loadCurrentUser() {
+  const session = await getSession();
+  if (!session) return null;
+  const db = await live();
+  return db.user.findUnique({
+    where: { id: session.uid },
+    include: {
+      studentProfile: true,
+      tutorProfile: true,
+      parentProfile: { include: { students: true } },
+    },
+  });
 }
+
+/** Per-request memo - avoids duplicate user queries on the same navigation. */
+const getCurrentUser = cache(loadCurrentUser);
 
 export async function requireUser(options?: { write?: boolean }) {
   const session = await getSession();
@@ -97,15 +116,7 @@ export async function requireUser(options?: { write?: boolean }) {
       `${home}?error=${encodeURIComponent("View-only mode. Return to admin to make changes.")}`,
     );
   }
-  const db = await live();
-  const user = await db.user.findUnique({
-    where: { id: session.uid },
-    include: {
-      studentProfile: true,
-      tutorProfile: true,
-      parentProfile: { include: { students: true } },
-    },
-  });
+  const user = await getCurrentUser();
   if (!user) redirect("/login");
   return user;
 }
