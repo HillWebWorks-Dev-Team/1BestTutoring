@@ -52,9 +52,9 @@ export default async function SettingsPage({
           <input id="school" className="field" name="school" defaultValue={profile?.school || ""} />
           <label className="label" htmlFor="goals">Goals</label>
           <textarea id="goals" className="field min-h-24" name="goals" defaultValue={profile?.goals || ""} />
-          <fieldset>
+          <fieldset className="grid gap-3">
             <legend className="label">Subjects you want</legend>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {SUBJECTS.map((subject) => (
                 <label key={subject} className="flex gap-2 text-sm">
                   <input type="checkbox" name="subjects" value={subject} defaultChecked={subjects.includes(subject)} />
@@ -62,6 +62,14 @@ export default async function SettingsPage({
                 </label>
               ))}
             </div>
+            <label className="label" htmlFor="subjectsOther">Other subjects</label>
+            <input
+              id="subjectsOther"
+              className="field"
+              name="subjectsOther"
+              defaultValue={subjects.filter((subject) => !(SUBJECTS as readonly string[]).includes(subject)).join(", ")}
+              placeholder="Add any others, separated by commas"
+            />
           </fieldset>
           <label className="label" htmlFor="guardianEmail">Guardian email</label>
           <input id="guardianEmail" className="field" name="guardianEmail" type="email" defaultValue={profile?.guardianEmail || ""} />

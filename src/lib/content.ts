@@ -64,15 +64,32 @@ export const TESTIMONIALS = [
 
 export const SUBJECT_COPY: Record<string, string> = {
   Mathematics: "Algebra through multivariable calculus, proofs, and contest-level problem solving.",
+  Algebra: "Equations, functions, and the habits that make later math feel less mysterious.",
+  Geometry: "Diagrams, proofs, and spatial reasoning for school and contest work.",
+  Precalculus: "Trig, functions, and the bridge into calculus without skipping the foundations.",
+  Calculus: "Limits, derivatives, integrals, and the explanations that stick past the exam.",
+  Statistics: "Probability, inference, and data work for AP Stats through college courses.",
   Physics: "Mechanics, electricity and magnetism, and the reasoning AP and college courses actually test.",
   Chemistry: "General, organic, and honors chemistry with an emphasis on mechanisms and lab thinking.",
   Biology: "From foundational biology to neuroscience, with help turning dense material into a study system.",
   "Computer Science": "Intro programming, data structures, algorithms, and school projects explained clearly.",
+  "Data Science": "Python, spreadsheets, and turning messy data into something a student can defend.",
   Economics: "Micro, macro, and the graphs, models, and writing that upper-level courses expect.",
   English: "Close reading, essays, and the kind of revision that makes an argument sharper.",
+  Writing: "Structure, clarity, and voice for school papers and longer projects.",
+  Literature: "Close reading and essay work that holds a claim without losing the text.",
   History: "Document work, timelines, and essays that hold a point of view without losing the evidence.",
+  "Government / Politics": "Institutions, argument, and the writing AP Gov and college courses expect.",
+  Psychology: "Core concepts, research methods, and clear explanations for AP and intro courses.",
+  Spanish: "Conversation, grammar, and reading support from foundational through advanced coursework.",
+  French: "Speaking, writing, and literature help with an ear for how the language actually works.",
+  Mandarin: "Tones, characters, and conversation practice paced to the student’s level.",
+  Latin: "Forms, translation, and the reading habits that make classical texts less opaque.",
   "SAT / ACT Prep": "Targeted practice with tutors who recently sat at the top of these exams.",
+  "AP Exam Prep": "Content review and free-response practice shaped around the real exam format.",
+  "GRE / GMAT Prep": "Quant, verbal, and timing strategies for graduate admissions tests.",
   "College Essays": "Voice-first editing from people who just went through highly selective admissions.",
+  "Study Skills": "Planning, note systems, and executive-function habits that carry across subjects.",
 };
 
 export const HOW_IT_WORKS = [

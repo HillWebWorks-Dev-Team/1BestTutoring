@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { canMessagePair } from "@/lib/access";
 import { live } from "@/lib/live";
 import { notify } from "@/lib/notify";
+import { SUBJECTS, joinList, mergeCheckboxList } from "@/lib/brand";
 import { requireUser } from "@/lib/session";
 
 async function activeAssignment(userId: string, otherUserId: string) {
@@ -337,9 +338,13 @@ export async function updateStudentSettings(formData: FormData) {
         gradeLevel: String(formData.get("gradeLevel") || user.studentProfile.gradeLevel || ""),
         school: String(formData.get("school") || ""),
         goals: String(formData.get("goals") || ""),
-        subjectsNeeded: formData.getAll("subjects").map(String).join(", "),
+        subjectsNeeded: joinList(
+          mergeCheckboxList(formData.getAll("subjects"), SUBJECTS, String(formData.get("subjectsOther") || "")),
+        ),
         guardianEmail: String(formData.get("guardianEmail") || "").toLowerCase() || null,
-        isMinor: formData.get("isMinor") === "on" || String(formData.get("gradeLevel")) === "Middle School",
+        isMinor:
+          formData.get("isMinor") === "on" ||
+          ["Elementary", "Middle School"].includes(String(formData.get("gradeLevel") || "")),
       },
     });
   }

@@ -56,16 +56,34 @@ export default async function TutorProfileEdit({ searchParams }: { searchParams:
         <textarea className="field" name="certifications" defaultValue={profile.certifications} />
         <label className="label">Test scores</label>
         <input className="field" name="testScores" defaultValue={profile.testScores} />
-        <div className="grid gap-2 sm:grid-cols-2">
+        <p className="label">Subjects</p>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {SUBJECTS.map((subject) => (
             <label key={subject} className="text-sm"><input type="checkbox" name="subjects" value={subject} defaultChecked={subjects.includes(subject)} /> {subject}</label>
           ))}
         </div>
+        <label className="label" htmlFor="subjectsOther">Other subjects</label>
+        <input
+          id="subjectsOther"
+          className="field"
+          name="subjectsOther"
+          defaultValue={subjects.filter((subject) => !(SUBJECTS as readonly string[]).includes(subject)).join(", ")}
+          placeholder="Add any others, separated by commas"
+        />
+        <p className="label">Grade levels</p>
         <div className="flex flex-wrap gap-3 text-sm">
           {GRADE_LEVELS.map((level) => (
             <label key={level}><input type="checkbox" name="gradeLevels" value={level} defaultChecked={grades.includes(level)} /> {level}</label>
           ))}
         </div>
+        <label className="label" htmlFor="gradeLevelsOther">Other grade levels</label>
+        <input
+          id="gradeLevelsOther"
+          className="field"
+          name="gradeLevelsOther"
+          defaultValue={grades.filter((level) => !(GRADE_LEVELS as readonly string[]).includes(level)).join(", ")}
+          placeholder="Add any others, separated by commas"
+        />
         <button className="btn btn-primary w-fit" type="submit">Save profile</button>
       </form>
     </div>

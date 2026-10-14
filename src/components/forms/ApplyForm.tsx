@@ -54,8 +54,12 @@ function mergeDraft(current: Defaults, draft: ProfileAutofill): Defaults {
     achievements: draft.achievements || current.achievements,
     certifications: draft.certifications || current.certifications,
     testScores: draft.testScores || current.testScores,
-    subjects: draft.subjects?.length ? draft.subjects : current.subjects,
-    gradeLevels: draft.gradeLevels?.length ? draft.gradeLevels : current.gradeLevels,
+    subjects: draft.subjects?.length
+      ? draft.subjects.filter((subject) => (SUBJECTS as readonly string[]).includes(subject))
+      : current.subjects,
+    gradeLevels: draft.gradeLevels?.length
+      ? draft.gradeLevels.filter((level) => (GRADE_LEVELS as readonly string[]).includes(level))
+      : current.gradeLevels,
     linkedinUrl: draft.linkedinUrl || current.linkedinUrl,
   };
 }
@@ -102,6 +106,12 @@ export function ApplyForm({
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [photoName, setPhotoName] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [subjectsOther, setSubjectsOther] = useState(() =>
+    (defaults?.subjects || []).filter((subject) => !(SUBJECTS as readonly string[]).includes(subject)).join(", "),
+  );
+  const [gradeLevelsOther, setGradeLevelsOther] = useState(() =>
+    (defaults?.gradeLevels || []).filter((level) => !(GRADE_LEVELS as readonly string[]).includes(level)).join(", "),
+  );
 
   const universitySelect = useMemo(() => {
     if (UNIVERSITIES.some((school) => school.name === values.university)) return values.university || UNIVERSITIES[0].name;
@@ -159,6 +169,10 @@ export function ApplyForm({
       linkedinUrl: normalizeLinkedInUrl(url) || result.draft.linkedinUrl,
     };
     setValues((current) => mergeDraft(current, draft));
+    const customSubjects = (draft.subjects || []).filter((subject) => !(SUBJECTS as readonly string[]).includes(subject));
+    const customGrades = (draft.gradeLevels || []).filter((level) => !(GRADE_LEVELS as readonly string[]).includes(level));
+    if (customSubjects.length) setSubjectsOther(customSubjects.join(", "));
+    if (customGrades.length) setGradeLevelsOther(customGrades.join(", "));
     setAutofillNote("Filled what we could from your LinkedIn text. Review everything before submitting.");
   }
 
@@ -176,6 +190,10 @@ export function ApplyForm({
         return;
       }
       setValues((current) => mergeDraft(current, draft));
+      const customSubjects = (draft.subjects || []).filter((subject) => !(SUBJECTS as readonly string[]).includes(subject));
+      const customGrades = (draft.gradeLevels || []).filter((level) => !(GRADE_LEVELS as readonly string[]).includes(level));
+      if (customSubjects.length) setSubjectsOther(customSubjects.join(", "));
+      if (customGrades.length) setGradeLevelsOther(customGrades.join(", "));
       setAutofillNote("Filled from your resume. Review the fields, then finish anything we missed.");
       return;
     }
@@ -190,6 +208,10 @@ export function ApplyForm({
       return;
     }
     setValues((current) => mergeDraft(current, result.draft!));
+    const customSubjects = (result.draft.subjects || []).filter((subject) => !(SUBJECTS as readonly string[]).includes(subject));
+    const customGrades = (result.draft.gradeLevels || []).filter((level) => !(GRADE_LEVELS as readonly string[]).includes(level));
+    if (customSubjects.length) setSubjectsOther(customSubjects.join(", "));
+    if (customGrades.length) setGradeLevelsOther(customGrades.join(", "));
     setAutofillNote("Filled from your resume. Review the fields, then finish anything we missed.");
   }
 
@@ -374,9 +396,10 @@ export function ApplyForm({
         />
       </fieldset>
 
-      <fieldset className="grid gap-3 border border-line bg-white p-5 sm:p-6">
+      <fieldset className="grid gap-4 border border-line bg-white p-5 sm:p-6">
         <legend className="px-1 font-serif text-3xl text-navy">Subjects and grades</legend>
-        <div className="grid gap-2 sm:grid-cols-2">
+        <p className="text-sm text-mute">Choose everything you teach. Add anything missing under Other.</p>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {SUBJECTS.map((subject) => (
             <label key={subject} className="flex items-center gap-2 text-sm">
               <input type="checkbox" name="subjects" value={subject} checked={values.subjects?.includes(subject) || false} onChange={() => toggleList("subjects", subject)} />
@@ -384,13 +407,40 @@ export function ApplyForm({
             </label>
           ))}
         </div>
-        <div className="mt-2 flex flex-wrap gap-4 text-sm">
-          {GRADE_LEVELS.map((level) => (
-            <label key={level} className="flex items-center gap-2">
-              <input type="checkbox" name="gradeLevels" value={level} checked={values.gradeLevels?.includes(level) || false} onChange={() => toggleList("gradeLevels", level)} />
-              {level}
-            </label>
-          ))}
+        <div>
+          <label className="label" htmlFor="subjectsOther">
+            Other subjects
+          </label>
+          <input
+            id="subjectsOther"
+            className="field"
+            name="subjectsOther"
+            value={subjectsOther}
+            onChange={(event) => setSubjectsOther(event.target.value)}
+            placeholder="e.g. Music theory, Organic chemistry, LSAT — separate with commas"
+          />
+        </div>
+        <div>
+          <p className="label">Grade levels</p>
+          <div className="mt-2 flex flex-wrap gap-4 text-sm">
+            {GRADE_LEVELS.map((level) => (
+              <label key={level} className="flex items-center gap-2">
+                <input type="checkbox" name="gradeLevels" value={level} checked={values.gradeLevels?.includes(level) || false} onChange={() => toggleList("gradeLevels", level)} />
+                {level}
+              </label>
+            ))}
+          </div>
+          <label className="label mt-3" htmlFor="gradeLevelsOther">
+            Other grade levels
+          </label>
+          <input
+            id="gradeLevelsOther"
+            className="field"
+            name="gradeLevelsOther"
+            value={gradeLevelsOther}
+            onChange={(event) => setGradeLevelsOther(event.target.value)}
+            placeholder="e.g. Homeschool, Adult learner — separate with commas"
+          />
         </div>
       </fieldset>
 

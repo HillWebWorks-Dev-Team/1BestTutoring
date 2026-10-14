@@ -59,7 +59,7 @@ export async function register(_state: { error?: string } | null, formData: Form
   if (existing) return { error: "An account with that email already exists. Sign in instead." };
 
   const guardianEmail = data.guardianEmail?.trim().toLowerCase() || null;
-  const isMinor = data.gradeLevel === "Middle School" || Boolean(guardianEmail);
+  const isMinor = data.gradeLevel === "Elementary" || data.gradeLevel === "Middle School" || Boolean(guardianEmail);
   if (data.role === "STUDENT" && data.gradeLevel && !GRADE_LEVELS.includes(data.gradeLevel as (typeof GRADE_LEVELS)[number])) {
     return { error: "Choose a grade level." };
   }

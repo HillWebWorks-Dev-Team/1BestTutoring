@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { resolveSelectOther } from "@/lib/apply-options";
-import { GRADE_LEVELS, SUBJECTS } from "@/lib/brand";
+import { GRADE_LEVELS, SUBJECTS, mergeCheckboxList } from "@/lib/brand";
 import { slugify } from "@/lib/format";
 import { live, platformSettings } from "@/lib/live";
 import { notifyAdmins } from "@/lib/notify";
@@ -76,8 +76,12 @@ export async function submitContact(_state: { error?: string; ok?: boolean } | n
 }
 
 export async function applyAsTutor(_state: { error?: string } | null, formData: FormData) {
-  const subjects = formData.getAll("subjects").map(String);
-  const gradeLevels = formData.getAll("gradeLevels").map(String);
+  const subjects = mergeCheckboxList(formData.getAll("subjects"), SUBJECTS, String(formData.get("subjectsOther") || ""));
+  const gradeLevels = mergeCheckboxList(
+    formData.getAll("gradeLevels"),
+    GRADE_LEVELS,
+    String(formData.get("gradeLevelsOther") || ""),
+  );
   const university = resolveSelectOther(String(formData.get("university") || ""), String(formData.get("universityOther") || ""));
   const major = resolveSelectOther(String(formData.get("major") || ""), String(formData.get("majorOther") || ""));
   const degree = resolveSelectOther(String(formData.get("degree") || ""), String(formData.get("degreeOther") || ""));
@@ -139,11 +143,11 @@ export async function applyAsTutor(_state: { error?: string } | null, formData: 
     });
 
   if (!parsed.success) return { error: parsed.error.issues[0]?.message || "Check the application and try again." };
-  if (!subjects.length || subjects.some((subject) => !SUBJECTS.includes(subject as (typeof SUBJECTS)[number]))) {
-    return { error: "Select at least one subject you teach." };
+  if (!subjects.length) {
+    return { error: "Select at least one subject you teach, or add one under Other." };
   }
-  if (!gradeLevels.length || gradeLevels.some((level) => !GRADE_LEVELS.includes(level as (typeof GRADE_LEVELS)[number]))) {
-    return { error: "Select the grade levels you tutor." };
+  if (!gradeLevels.length) {
+    return { error: "Select the grade levels you tutor, or add one under Other." };
   }
 
   const settings = await platformSettings();

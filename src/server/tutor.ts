@@ -5,7 +5,7 @@ import { live, platformSettings } from "@/lib/live";
 import { notifyAdmins } from "@/lib/notify";
 import { requireUser } from "@/lib/session";
 import { getStripe } from "@/lib/stripe";
-import { appUrl } from "@/lib/brand";
+import { GRADE_LEVELS, SUBJECTS, appUrl, joinList, mergeCheckboxList } from "@/lib/brand";
 
 const QUALIFICATIONS = [
   "university",
@@ -29,8 +29,12 @@ export async function updateTutorProfile(formData: FormData) {
     redirect(`/dashboard/tutor/profile?error=Rates must stay between $${settings.minHourlyRateCents / 100} and $${settings.maxHourlyRateCents / 100}.`);
   }
 
-  const subjects = formData.getAll("subjects").map(String).join(", ");
-  const gradeLevels = formData.getAll("gradeLevels").map(String).join(", ");
+  const subjects = joinList(
+    mergeCheckboxList(formData.getAll("subjects"), SUBJECTS, String(formData.get("subjectsOther") || "")),
+  );
+  const gradeLevels = joinList(
+    mergeCheckboxList(formData.getAll("gradeLevels"), GRADE_LEVELS, String(formData.get("gradeLevelsOther") || "")),
+  );
   const nextQualifications = {
     university: String(formData.get("university") || ""),
     major: String(formData.get("major") || ""),
