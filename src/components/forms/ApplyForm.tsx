@@ -1,6 +1,8 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { GRADE_LEVELS, SUBJECTS } from "@/lib/brand";
 import {
   ACHIEVEMENT_OPTIONS,
@@ -16,7 +18,8 @@ import {
 import { isLinkedInUrl, normalizeLinkedInUrl, parseProfileText, type ProfileAutofill } from "@/lib/profile-autofill";
 import { UNIVERSITIES } from "@/lib/universities";
 import { SelectWithOther } from "@/components/forms/SelectWithOther";
-import { SubmitButton } from "@/components/ui";
+import { Spinner } from "@/components/ui/PageLoader";
+import { toast } from "@/components/ui/Toast";
 import { applyAsTutor } from "@/server/apply";
 import { parseLinkedInTextForAutofill, parseResumeForAutofill } from "@/server/autofill";
 
@@ -71,6 +74,138 @@ function choiceState(value: string | undefined, options: readonly string[]) {
   return { select: "Other", other: current };
 }
 
+const BIO_MIN = 40;
+
+const APPLY_STEPS = [
+  "Saving your account details…",
+  "Uploading profile and documents…",
+  "Sending application to review…",
+];
+
+function RequiredMark() {
+  return (
+    <span className="text-[#b42318]" aria-hidden="true">
+      {" "}
+      *
+    </span>
+  );
+}
+
+function ApplySubmitFooter() {
+  const { pending } = useFormStatus();
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    if (!pending) {
+      setStep(0);
+      return;
+    }
+    setStep(0);
+    const timers = [
+      window.setTimeout(() => setStep(1), 1000),
+      window.setTimeout(() => setStep(2), 2200),
+    ];
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [pending]);
+
+  useEffect(() => {
+    if (!pending) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [pending]);
+
+  const progress = pending ? Math.min(92, 18 + step * 28) : 0;
+
+  return (
+    <>
+      <div className="flex flex-col gap-4 border border-line bg-white p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:p-6">
+        <p className="min-w-0 text-sm leading-6 text-mute">
+          Submitting sends your application to our review queue. You can sign in later to check status.
+        </p>
+        <button
+          type="submit"
+          disabled={pending}
+          aria-busy={pending}
+          className="btn btn-primary w-full shrink-0 whitespace-nowrap sm:w-auto"
+        >
+          Submit application
+        </button>
+      </div>
+
+      {pending ? (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-deep/55 px-5 backdrop-blur-[2px]"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="apply-loading-title"
+          aria-busy="true"
+        >
+          <div className="w-full max-w-md border border-line bg-white p-6 shadow-[0_24px_60px_-28px_rgb(11_29_51_/_0.65)]">
+            <div className="flex items-start gap-4">
+              <span className="mt-0.5 grid h-11 w-11 shrink-0 place-items-center rounded-full border border-gold/40 bg-mist">
+                <Spinner className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="kicker">Application</p>
+                <h2 id="apply-loading-title" className="mt-1 font-serif text-3xl text-navy">
+                  Submitting your application
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-mute">
+                  Hang tight — we’re saving your details and sending them to the review queue. Don’t close this tab.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="mb-2 flex items-center justify-between text-xs text-mute">
+                <span>Progress</span>
+                <span>{progress}%</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-mist">
+                <div
+                  className="h-full rounded-full bg-gold transition-[width] duration-500 ease-out"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+
+            <ol className="mt-6 space-y-3">
+              {APPLY_STEPS.map((item, index) => {
+                const active = index === step;
+                const done = index < step;
+                return (
+                  <li
+                    key={item}
+                    className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition ${
+                      active
+                        ? "border-gold/50 bg-gold/10 text-navy"
+                        : done
+                          ? "border-line bg-mist text-navy"
+                          : "border-transparent text-mute"
+                    }`}
+                  >
+                    <span
+                      className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[11px] font-semibold ${
+                        done ? "bg-navy text-ivory" : active ? "bg-gold text-deep" : "bg-line text-mute"
+                      }`}
+                    >
+                      {done ? "✓" : index + 1}
+                    </span>
+                    <span className={active ? "font-medium" : ""}>{item}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
 export function ApplyForm({
   signedIn,
   defaults,
@@ -100,9 +235,14 @@ export function ApplyForm({
     linkedinUrl: defaults?.linkedinUrl || "",
   }));
   const [linkedinPaste, setLinkedinPaste] = useState("");
-  const [autofillNote, setAutofillNote] = useState<string | null>(null);
-  const [autofillError, setAutofillError] = useState<string | null>(null);
   const [autofilling, setAutofilling] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const allowSubmitRef = useRef(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [photoName, setPhotoName] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -129,6 +269,12 @@ export function ApplyForm({
   const achievements = choiceState(values.achievements, ACHIEVEMENT_OPTIONS);
   const certifications = choiceState(values.certifications, CERTIFICATION_OPTIONS);
   const testScores = choiceState(values.testScores, TEST_SCORE_OPTIONS);
+  const bioLength = (values.bio || "").trim().length;
+  const bioReady = bioLength >= BIO_MIN;
+
+  useEffect(() => {
+    if (state?.error) toast.error(state.error);
+  }, [state]);
 
   function setField<K extends keyof Defaults>(key: K, value: Defaults[K]) {
     setValues((current) => ({ ...current, [key]: value }));
@@ -145,23 +291,21 @@ export function ApplyForm({
   }
 
   async function autofillFromLinkedIn() {
-    setAutofillError(null);
-    setAutofillNote(null);
     const url = values.linkedinUrl?.trim() || "";
     if (url && !isLinkedInUrl(url)) {
-      setAutofillError("Use a LinkedIn profile link like https://www.linkedin.com/in/your-name.");
+      toast.error("Use a LinkedIn profile link like https://www.linkedin.com/in/your-name.");
       return;
     }
     const source = linkedinPaste.trim() || url;
     if (!linkedinPaste.trim() && url) {
-      setAutofillError("LinkedIn blocks automated reads. Paste your About, Experience, and Education text below, then click Autofill.");
+      toast.error("LinkedIn blocks automated reads. Paste your About, Experience, and Education text below, then click Autofill.");
       return;
     }
     setAutofilling(true);
     const result = await parseLinkedInTextForAutofill(source);
     setAutofilling(false);
     if (result.error || !result.draft) {
-      setAutofillError(result.error || "Could not autofill from that text.");
+      toast.error(result.error || "Could not autofill from that text.");
       return;
     }
     const draft = {
@@ -173,20 +317,18 @@ export function ApplyForm({
     const customGrades = (draft.gradeLevels || []).filter((level) => !(GRADE_LEVELS as readonly string[]).includes(level));
     if (customSubjects.length) setSubjectsOther(customSubjects.join(", "));
     if (customGrades.length) setGradeLevelsOther(customGrades.join(", "));
-    setAutofillNote("Filled what we could from your LinkedIn text. Review everything before submitting.");
+    toast.success("Filled what we could from your LinkedIn text. Review everything before submitting.");
   }
 
   async function onResumeSelected(file: File | null) {
     setResumeFile(file);
-    setAutofillError(null);
-    setAutofillNote(null);
     if (!file) return;
 
     if (file.type === "text/plain" || file.name.toLowerCase().endsWith(".txt")) {
       const text = await file.text();
       const draft = parseProfileText(text);
       if (!Object.keys(draft).length) {
-        setAutofillError("That text resume didn’t have enough recognizable details.");
+        toast.error("That text resume didn’t have enough recognizable details.");
         return;
       }
       setValues((current) => mergeDraft(current, draft));
@@ -194,7 +336,7 @@ export function ApplyForm({
       const customGrades = (draft.gradeLevels || []).filter((level) => !(GRADE_LEVELS as readonly string[]).includes(level));
       if (customSubjects.length) setSubjectsOther(customSubjects.join(", "));
       if (customGrades.length) setGradeLevelsOther(customGrades.join(", "));
-      setAutofillNote("Filled from your resume. Review the fields, then finish anything we missed.");
+      toast.success("Filled from your resume. Review the fields, then finish anything we missed.");
       return;
     }
 
@@ -204,7 +346,7 @@ export function ApplyForm({
     const result = await parseResumeForAutofill(body);
     setAutofilling(false);
     if (result.error || !result.draft) {
-      setAutofillError(result.error || "Could not autofill from that resume.");
+      toast.error(result.error || "Could not autofill from that resume.");
       return;
     }
     setValues((current) => mergeDraft(current, result.draft!));
@@ -212,7 +354,29 @@ export function ApplyForm({
     const customGrades = (result.draft.gradeLevels || []).filter((level) => !(GRADE_LEVELS as readonly string[]).includes(level));
     if (customSubjects.length) setSubjectsOther(customSubjects.join(", "));
     if (customGrades.length) setGradeLevelsOther(customGrades.join(", "));
-    setAutofillNote("Filled from your resume. Review the fields, then finish anything we missed.");
+    toast.success("Filled from your resume. Review the fields, then finish anything we missed.");
+  }
+
+  function firstInvalidMessage(form: HTMLFormElement) {
+    const invalid = form.querySelector(":invalid") as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
+    if (!invalid) return "Please complete the required fields.";
+    const label = form.querySelector(`label[for="${invalid.id}"]`)?.textContent?.trim();
+    if (invalid.validity.valueMissing) {
+      return label ? `Please fill in ${label}.` : "Please complete the required fields.";
+    }
+    if (invalid.validity.tooShort) {
+      return label ? `${label} is too short.` : invalid.validationMessage;
+    }
+    if (invalid.validity.typeMismatch) {
+      return label ? `Enter a valid ${label.toLowerCase()}.` : invalid.validationMessage;
+    }
+    return invalid.validationMessage || "Please check the form and try again.";
+  }
+
+  function confirmAndSubmit() {
+    allowSubmitRef.current = true;
+    setConfirmOpen(false);
+    formRef.current?.requestSubmit();
   }
 
   function onPhotoSelected(file: File | null) {
@@ -227,9 +391,35 @@ export function ApplyForm({
   }
 
   return (
-    <form action={action} className="grid gap-10" encType="multipart/form-data">
-      {state?.error ? <p className="border border-[#e7c7c2] bg-[#fbf1ef] px-4 py-3 text-sm text-[#7d332c]">{state.error}</p> : null}
-
+    <>
+    <form
+      ref={formRef}
+      action={action}
+      className="grid gap-10"
+      encType="multipart/form-data"
+      noValidate
+      onSubmit={(event) => {
+        const form = event.currentTarget;
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          toast.error(firstInvalidMessage(form));
+          const invalid = form.querySelector(":invalid") as HTMLElement | null;
+          invalid?.focus();
+          return;
+        }
+        if (!signedIn && password !== confirmPassword) {
+          event.preventDefault();
+          toast.error("Passwords don’t match. Re-enter the same password in both fields.");
+          return;
+        }
+        if (!allowSubmitRef.current) {
+          event.preventDefault();
+          setConfirmOpen(true);
+          return;
+        }
+        allowSubmitRef.current = false;
+      }}
+    >
       <fieldset className="grid gap-4 border border-line bg-white p-5 sm:p-6">
         <legend className="px-1 font-serif text-3xl text-navy">Quick fill</legend>
         <p className="text-sm leading-6 text-mute">
@@ -273,25 +463,92 @@ export function ApplyForm({
           />
           {resumeFile ? <p className="mt-2 text-xs text-mute">Selected: {resumeFile.name}</p> : null}
         </div>
-        {autofillNote ? <p className="border border-line bg-mist px-4 py-3 text-sm text-navy">{autofillNote}</p> : null}
-        {autofillError ? <p className="border border-[#e7c7c2] bg-[#fbf1ef] px-4 py-3 text-sm text-[#7d332c]">{autofillError}</p> : null}
       </fieldset>
 
       <fieldset className="grid gap-4 border border-line bg-white p-5 sm:p-6">
         <legend className="px-1 font-serif text-3xl text-navy">Account</legend>
-        <label className="label" htmlFor="name">Full name</label>
+        <p className="text-xs text-mute">
+          Fields marked with <span className="text-[#b42318]">*</span> are required.
+        </p>
+        <label className="label" htmlFor="name">
+          Full name
+          <RequiredMark />
+        </label>
         <input id="name" className="field" name="name" value={values.name || ""} onChange={(event) => setField("name", event.target.value)} required />
-        <label className="label" htmlFor="email">Email</label>
+        <label className="label" htmlFor="email">
+          Email
+          <RequiredMark />
+        </label>
         <input id="email" className="field" name="email" type="email" value={values.email || ""} onChange={(event) => setField("email", event.target.value)} required />
         {signedIn ? null : (
           <>
-            <label className="label" htmlFor="password">Password</label>
-            <input id="password" className="field" name="password" type="password" minLength={8} required />
+            <div>
+              <label className="label" htmlFor="password">
+                Password
+                <RequiredMark />
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  className="field pr-12"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  minLength={8}
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  aria-controls="password"
+                  className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-lg text-mute hover:text-navy"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-mute">At least 8 characters.</p>
+            </div>
+            <div>
+              <label className="label" htmlFor="confirmPassword">
+                Confirm password
+                <RequiredMark />
+              </label>
+              <div className="relative">
+                <input
+                  id="confirmPassword"
+                  className="field pr-12"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  minLength={8}
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((value) => !value)}
+                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                  aria-pressed={showConfirmPassword}
+                  aria-controls="confirmPassword"
+                  className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-lg text-mute hover:text-navy"
+                >
+                  {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+            </div>
           </>
         )}
         <div>
-          <label className="label" htmlFor="photo">Profile photo</label>
-          <p className="mb-2 text-sm text-mute">Required. A clear headshot tutors and families will see on your profile.</p>
+          <label className="label" htmlFor="photo">
+            Profile photo
+            {requirePhoto ? <RequiredMark /> : null}
+          </label>
+          <p className="mb-2 text-sm text-mute">A clear headshot tutors and families will see on your profile.</p>
           <input
             id="photo"
             className="field"
@@ -310,7 +567,10 @@ export function ApplyForm({
 
       <fieldset className="grid gap-4 border border-line bg-white p-5 sm:p-6 md:grid-cols-2">
         <legend className="px-1 font-serif text-3xl text-navy md:col-span-2">Academics</legend>
-        <label className="label md:col-span-2" htmlFor="university">University</label>
+        <label className="label md:col-span-2" htmlFor="university">
+          University
+          <RequiredMark />
+        </label>
         <select
           id="university"
           className="field md:col-span-2"
@@ -399,6 +659,10 @@ export function ApplyForm({
       <fieldset className="grid gap-4 border border-line bg-white p-5 sm:p-6">
         <legend className="px-1 font-serif text-3xl text-navy">Subjects and grades</legend>
         <p className="text-sm text-mute">Choose everything you teach. Add anything missing under Other.</p>
+        <p className="label">
+          Subjects
+          <RequiredMark />
+        </p>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {SUBJECTS.map((subject) => (
             <label key={subject} className="flex items-center gap-2 text-sm">
@@ -421,7 +685,10 @@ export function ApplyForm({
           />
         </div>
         <div>
-          <p className="label">Grade levels</p>
+          <p className="label">
+            Grade levels
+            <RequiredMark />
+          </p>
           <div className="mt-2 flex flex-wrap gap-4 text-sm">
             {GRADE_LEVELS.map((level) => (
               <label key={level} className="flex items-center gap-2">
@@ -446,8 +713,26 @@ export function ApplyForm({
 
       <fieldset className="grid gap-4 border border-line bg-white p-5 sm:p-6">
         <legend className="px-1 font-serif text-3xl text-navy">Your practice</legend>
-        <label className="label" htmlFor="bio">Biography</label>
-        <textarea id="bio" className="field min-h-32" name="bio" value={values.bio || ""} onChange={(event) => setField("bio", event.target.value)} required />
+        <div>
+          <label className="label" htmlFor="bio">
+            Biography
+            <RequiredMark />
+          </label>
+          <textarea
+            id="bio"
+            className="field min-h-32"
+            name="bio"
+            value={values.bio || ""}
+            onChange={(event) => setField("bio", event.target.value)}
+            minLength={BIO_MIN}
+            required
+            aria-describedby="bio-count"
+          />
+          <p id="bio-count" className={`mt-1 text-xs ${bioReady ? "text-navy" : "text-mute"}`}>
+            {bioLength} / {BIO_MIN} characters minimum
+            {bioReady ? " · looks good" : ` · ${BIO_MIN - bioLength} more needed`}
+          </p>
+        </div>
 
         <SelectWithOther
           id="experience"
@@ -528,14 +813,36 @@ export function ApplyForm({
         <label className="label" htmlFor="proof">Proof of enrollment or graduation</label>
         <input id="proof" className="field" name="proof" type="file" accept=".pdf,image/*,.txt" />
       </fieldset>
-      <div className="border border-line bg-white p-5 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:p-6">
-        <p className="text-sm leading-6 text-mute">
-          Submitting sends your application to our review queue. You can sign in later to check status.
-        </p>
-        <SubmitButton pendingLabel="Submitting…" className="btn btn-primary mt-4 w-full sm:mt-0 sm:w-auto">
-          Submit application
-        </SubmitButton>
-      </div>
+      <ApplySubmitFooter />
     </form>
+
+    {confirmOpen ? (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-deep/55 px-5 backdrop-blur-[2px]"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="apply-confirm-title"
+        aria-describedby="apply-confirm-body"
+      >
+        <div className="w-full max-w-md border border-line bg-white p-6 shadow-[0_24px_60px_-28px_rgb(11_29_51_/_0.65)]">
+          <p className="kicker">Application</p>
+          <h2 id="apply-confirm-title" className="mt-1 font-serif text-3xl text-navy">
+            Submit this application?
+          </h2>
+          <p id="apply-confirm-body" className="mt-2 text-sm leading-6 text-mute">
+            We’ll send your materials to the review queue. You can sign in later to check status.
+          </p>
+          <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <button type="button" className="btn btn-line whitespace-nowrap" onClick={() => setConfirmOpen(false)}>
+              Cancel
+            </button>
+            <button type="button" className="btn btn-primary whitespace-nowrap" onClick={confirmAndSubmit}>
+              Confirm submit
+            </button>
+          </div>
+        </div>
+      </div>
+    ) : null}
+    </>
   );
 }

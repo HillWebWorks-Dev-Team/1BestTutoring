@@ -24,6 +24,8 @@ const YEAR_RE = /\b(19|20)\d{2}\b/g;
 const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
 const LINKEDIN_RE = /https?:\/\/(?:www\.)?linkedin\.com\/in\/[A-Za-z0-9\-_%/]+/i;
 const NAME_LINE_RE = /^([A-Z][a-z]+(?:\s+[A-Z][a-z.'-]+){1,3})$/;
+const ROLE_LINE_RE =
+  /\b(designer|developer|engineer|tutor|teacher|student|graduate|scientist|analyst|specialist|consultant|founder|intern)\b|\|/i;
 
 function clean(text: string) {
   return text
@@ -45,7 +47,12 @@ function sectionAfter(text: string, labels: string[]) {
 
 function findUniversity(text: string) {
   const lower = text.toLowerCase();
-  return UNIVERSITIES.find((school) => lower.includes(school.name.toLowerCase()) || lower.includes(school.short.toLowerCase()));
+  return UNIVERSITIES.find((school) => {
+    if (lower.includes(school.name.toLowerCase())) return true;
+    // Word-boundary match for shorts — avoids "MIT" matching inside "permit".
+    const short = school.short.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(?:^|[^a-z0-9])${short}(?:[^a-z0-9]|$)`, "i").test(text);
+  });
 }
 
 function findSubjects(text: string) {
@@ -72,13 +79,79 @@ function findMajor(text: string, universityName?: string) {
   return standalone?.[1]?.replace(/[,.]$/, "").trim();
 }
 
+const NAME_STOP = new Set([
+  "a",
+  "an",
+  "and",
+  "as",
+  "at",
+  "by",
+  "for",
+  "from",
+  "in",
+  "of",
+  "on",
+  "or",
+  "the",
+  "to",
+  "with",
+]);
+
+function toTitleCaseName(value: string) {
+  return value
+    .trim()
+    .replace(/[.:]+$/g, "")
+    .split(/\s+/)
+    .map((part) =>
+      part
+        .split("-")
+        .map((chunk) => (chunk ? chunk.charAt(0).toUpperCase() + chunk.slice(1).toLowerCase() : chunk))
+        .join("-"),
+    )
+    .join(" ");
+}
+
+function isNameWords(line: string) {
+  const normalized = line.trim().replace(/[.:]+$/g, "");
+  const words = normalized.split(/\s+/);
+  if (words.length < 2 || words.length > 4 || normalized.length >= 48 || /\d/.test(normalized)) return false;
+  if (EMAIL_RE.test(normalized) || /linkedin|http|@|resume|curriculum|\||,/i.test(normalized)) return false;
+  if (words.some((word) => NAME_STOP.has(word.toLowerCase()))) return false;
+  if (!words.every((word) => /^[A-Za-z][A-Za-z.'-]*$/.test(word))) return false;
+
+  const letters = normalized.replace(/[^A-Za-z]/g, "");
+  const upper = (normalized.match(/[A-Z]/g) || []).length;
+  const mostlyUpper = letters.length > 0 && upper / letters.length >= 0.7;
+  const titleCase = words.every((word) => /^[A-Z][a-z.'-]+$/.test(word));
+  return mostlyUpper || titleCase;
+}
+
 function findName(text: string) {
   const lines = text.split("\n").map((line) => line.trim()).filter(Boolean);
-  for (const line of lines.slice(0, 8)) {
+
+  // Classic title-case name near the top of a plain resume
+  for (const line of lines.slice(0, 12)) {
     if (EMAIL_RE.test(line) || /linkedin|http|@|resume|curriculum/i.test(line)) continue;
     if (NAME_LINE_RE.test(line) && line.length < 48) return line;
   }
-  return undefined;
+
+  // Designed PDFs often use ALL CAPS and/or split "FIRST" / "MIDDLE LAST" across lines
+  let fallback: string | undefined;
+  for (let i = 0; i < Math.min(lines.length, 80); i++) {
+    const options = [lines[i]];
+    if (lines[i + 1]) options.push(`${lines[i]} ${lines[i + 1]}`);
+
+    for (const candidate of options) {
+      const normalized = candidate.replace(/\s+/g, " ").trim();
+      if (!isNameWords(normalized)) continue;
+      const titled = toTitleCaseName(normalized);
+      const afterIndex = candidate === lines[i] ? i + 1 : i + 2;
+      const after = lines[afterIndex] || "";
+      if (ROLE_LINE_RE.test(after)) return titled;
+      if (!fallback) fallback = titled;
+    }
+  }
+  return fallback;
 }
 
 function pickGraduationYear(text: string) {
@@ -93,7 +166,10 @@ export function parseProfileText(raw: string): ProfileAutofill {
   if (!text) return {};
 
   const university = findUniversity(text);
-  const degreeRaw = text.match(DEGREE_RE)?.[1];
+  // Skip office-suite false positives like "MS Excel".
+  const degreeRaw = text
+    .replace(/\bMS\s+(Excel|Word|PowerPoint|Office|Teams)\b/gi, " ")
+    .match(DEGREE_RE)?.[1];
   const degreeKey = degreeRaw?.replace(/\./g, "").replace(/\s+/g, "").toUpperCase();
   const degreeMap: Record<string, string> = {
     AB: "A.B.",

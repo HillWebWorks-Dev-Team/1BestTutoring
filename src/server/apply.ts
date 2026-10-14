@@ -107,6 +107,7 @@ export async function applyAsTutor(_state: { error?: string } | null, formData: 
       name: z.string().trim().min(2, "Enter your name."),
       email: z.string().trim().email("Enter a valid email."),
       password: z.string().optional(),
+      confirmPassword: z.string().optional(),
       university: z.string().trim().min(2, "Choose your university."),
       major: z.string().trim().min(2, "Choose your major."),
       degree: z.string().trim().min(2, "Choose your degree."),
@@ -126,6 +127,7 @@ export async function applyAsTutor(_state: { error?: string } | null, formData: 
       name: formData.get("name"),
       email: formData.get("email"),
       password: formData.get("password") || undefined,
+      confirmPassword: formData.get("confirmPassword") || undefined,
       university,
       major,
       degree,
@@ -197,6 +199,9 @@ export async function applyAsTutor(_state: { error?: string } | null, formData: 
 
     if (!parsed.data.password || parsed.data.password.length < 8) {
       return { error: "Create a password with at least 8 characters." };
+    }
+    if (!parsed.data.confirmPassword || parsed.data.password !== parsed.data.confirmPassword) {
+      return { error: "Passwords don’t match. Re-enter the same password in both fields." };
     }
     const existing = await db.user.findUnique({ where: { email } });
     if (existing) return { error: "That email already has an account. Sign in to continue an application." };

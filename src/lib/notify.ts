@@ -1,5 +1,5 @@
 import { prisma } from "./db";
-import { appUrl } from "./brand";
+import { emailCtaLabel, renderBrandedEmail } from "./email-template";
 
 type NotifyInput = {
   userId: string;
@@ -29,6 +29,13 @@ export async function notify(input: NotifyInput) {
 
   if (!input.email || !process.env.RESEND_API_KEY) return;
 
+  const { html, text } = renderBrandedEmail({
+    title: input.title,
+    body: input.body,
+    href: input.href,
+    ctaLabel: emailCtaLabel(input.href),
+  });
+
   await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -39,7 +46,8 @@ export async function notify(input: NotifyInput) {
       from: process.env.EMAIL_FROM || "1% Better Tutoring <hello@onepercentbetter.com>",
       to: [input.email],
       subject: input.title,
-      text: `${input.body}${input.href ? `\n\n${appUrl()}${input.href}` : ""}`,
+      html,
+      text,
     }),
   }).catch(() => undefined);
 }

@@ -16,7 +16,7 @@ async function main() {
   });
 
   await prisma.user.create({
-    data: { name: "Avery Quinn", email: "admin@onepercentbetter.com", role: "ADMIN", passwordHash, timezone: "America/New_York" },
+    data: { name: "HillWebWorks", email: "admin@onepercentbetter.com", role: "ADMIN", passwordHash, timezone: "America/New_York" },
   });
 
   const tutors = [

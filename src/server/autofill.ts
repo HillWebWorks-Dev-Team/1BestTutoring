@@ -3,7 +3,9 @@
 import { parseProfileText, type ProfileAutofill } from "@/lib/profile-autofill";
 
 async function textFromPdf(buffer: Buffer) {
-  const mod = await import("pdf-parse");
+  // Import the lib entry directly. The package root runs a debug harness when
+  // `module.parent` is unset (common with Next/dynamic import) and throws ENOENT.
+  const mod = await import("pdf-parse/lib/pdf-parse.js");
   const pdfParse = ("default" in mod ? mod.default : mod) as (data: Buffer) => Promise<{ text: string }>;
   const parsed = await pdfParse(buffer);
   return parsed.text || "";

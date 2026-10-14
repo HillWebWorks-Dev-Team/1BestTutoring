@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Portrait } from "@/components/brand";
+import { ApplicationDecisionButtons } from "@/components/dashboard/ApplicationDecisionButtons";
 import { hourly } from "@/lib/format";
 import { live } from "@/lib/live";
-import { approveTutor, rejectTutor, requestTutorInfo, waitlistTutor } from "@/server/admin";
+import { rejectTutor, requestTutorInfo } from "@/server/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
   const docs = tutor.user.documents.filter((doc) => doc.kind !== "PROFILE_PHOTO");
 
   return (
+    <div>
     <div className="mx-auto max-w-3xl">
       <Link href="/dashboard/admin/applications" className="text-sm text-mute hover:text-navy">
         ← Back to queue
@@ -114,21 +116,6 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
         </ul>
       </div>
 
-      <div className="mt-8 flex flex-wrap gap-2">
-        <form action={approveTutor}>
-          <input type="hidden" name="tutorId" value={tutor.id} />
-          <button className="btn btn-primary" type="submit">
-            Approve
-          </button>
-        </form>
-        <form action={waitlistTutor}>
-          <input type="hidden" name="tutorId" value={tutor.id} />
-          <button className="btn btn-line" type="submit">
-            Waitlist
-          </button>
-        </form>
-      </div>
-
       <form action={requestTutorInfo} className="mt-6 grid gap-2 border border-line bg-white p-5">
         <p className="font-serif text-2xl text-navy">Request more information</p>
         <input type="hidden" name="tutorId" value={tutor.id} />
@@ -146,6 +133,13 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
           Reject
         </button>
       </form>
+
+      <div className="h-4" aria-hidden />
+    </div>
+
+      <div className="sticky bottom-0 z-20 -mx-4 mt-6 border-t border-line bg-ivory/95 px-4 py-3 backdrop-blur md:-mx-8 md:px-8">
+        <ApplicationDecisionButtons tutorId={tutor.id} tutorName={tutor.user.name} />
+      </div>
     </div>
   );
 }

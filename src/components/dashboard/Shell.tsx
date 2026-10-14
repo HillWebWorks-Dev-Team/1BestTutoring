@@ -30,13 +30,17 @@ export function DashboardShell({
   const [open, setOpen] = useState(false);
   return (
     <div className="min-h-screen bg-ivory md:grid md:grid-cols-[250px_1fr]">
-      <aside className={`${open ? "block" : "hidden"} border-r border-white/10 bg-navy text-ivory md:block`}>
-        <div className="flex h-full flex-col px-4 py-5">
-          <Link href="/" onClick={() => setOpen(false)}>
-            <Logo light />
-          </Link>
-          <p className="mt-6 text-[11px] uppercase tracking-[0.18em] text-gold/70">{role}</p>
-          <nav className="mt-3 grid gap-1">
+      <aside
+        className={`${open ? "block" : "hidden"} border-r border-white/10 bg-navy text-ivory md:sticky md:top-0 md:block md:h-screen md:self-start`}
+      >
+        <div className="flex h-full min-h-0 flex-col px-4 py-5">
+          <div className="shrink-0">
+            <Link href="/" onClick={() => setOpen(false)}>
+              <Logo light />
+            </Link>
+            <p className="mt-6 text-[11px] uppercase tracking-[0.18em] text-gold/70">{role}</p>
+          </div>
+          <nav className="mt-3 min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain pr-1">
             {links.map((link) => {
               const activeHref = [...links]
                 .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
@@ -65,7 +69,7 @@ export function DashboardShell({
               );
             })}
           </nav>
-          <div className="mt-auto pt-8">
+          <div className="mt-4 shrink-0 border-t border-white/10 pt-4">
             <Link href="/dashboard/notifications" className="block text-sm text-ivory/80" onClick={() => setOpen(false)}>
               Notifications{unread ? ` (${unread})` : ""}
             </Link>

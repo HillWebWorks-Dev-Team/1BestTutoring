@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Caveat, Inter, Playfair_Display } from "next/font/google";
 import { NavigationProgress } from "@/components/site/NavigationProgress";
+import { Toaster } from "@/components/ui/Toast";
 import { BRAND } from "@/lib/brand";
 import "./globals.css";
 
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <NavigationProgress />
         </Suspense>
         {children}
+        <Toaster />
       </body>
     </html>
   );

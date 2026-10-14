@@ -37,6 +37,12 @@ export function SelectWithOther({
     <div className={className}>
       <label className="label" htmlFor={id}>
         {label}
+        {required ? (
+          <span className="text-[#b42318]" aria-hidden="true">
+            {" "}
+            *
+          </span>
+        ) : null}
       </label>
       <select
         id={id}

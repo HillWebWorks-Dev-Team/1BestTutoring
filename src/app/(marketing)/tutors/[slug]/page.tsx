@@ -61,16 +61,20 @@ export default async function TutorProfilePage({
   const video = youtubeId(tutor.introVideoUrl);
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+  const hasHours = tutor.availability.length > 0 || Boolean(tutor.availabilityNotes);
+
   return (
-    <div className="mx-auto grid max-w-6xl gap-8 px-5 py-12 lg:grid-cols-[1fr_340px]">
-      <div className="order-2 space-y-8 lg:order-1">
+    <div className="mx-auto grid max-w-6xl items-start gap-8 px-5 py-12 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="order-2 min-w-0 space-y-10 lg:order-1">
         <Notice
           error={query.error}
           success={query.reviewed ? "Thanks — your review is live on this profile." : undefined}
         />
         <section>
           <p className="kicker">Biography</p>
-          <p className="mt-3 max-w-3xl text-lg leading-8">{tutor.bio}</p>
+          <p className="mt-3 max-w-3xl text-lg leading-8 [overflow-wrap:anywhere]">
+            {tutor.bio || "This tutor has not added a biography yet."}
+          </p>
         </section>
         <section className="grid gap-4 md:grid-cols-2">
           <Info title="Education" body={tutor.education} />
@@ -91,14 +95,24 @@ export default async function TutorProfilePage({
         </section>
         <section>
           <p className="kicker">Consultation hours</p>
-          <ul className="mt-3 grid gap-2 text-sm md:grid-cols-2">
-            {tutor.availability.map((rule) => (
-              <li key={rule.id} className="rounded-xl border border-line bg-paper px-3 py-2">
-                {days[rule.dayOfWeek]} · {minutes(rule.startMin)}–{minutes(rule.endMin)}
-              </li>
-            ))}
-          </ul>
-          {tutor.availabilityNotes ? <p className="mt-3 text-sm text-mute">{tutor.availabilityNotes}</p> : null}
+          {hasHours ? (
+            <>
+              {tutor.availability.length > 0 ? (
+                <ul className="mt-3 grid gap-2 text-sm md:grid-cols-2">
+                  {tutor.availability.map((rule) => (
+                    <li key={rule.id} className="rounded-xl border border-line bg-paper px-3 py-2">
+                      {days[rule.dayOfWeek]} · {minutes(rule.startMin)}–{minutes(rule.endMin)}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {tutor.availabilityNotes ? <p className="mt-3 text-sm text-mute">{tutor.availabilityNotes}</p> : null}
+            </>
+          ) : (
+            <p className="mt-3 text-sm text-mute">
+              Weekly hours are not listed yet. You can still book a free consultation to find a time that works.
+            </p>
+          )}
         </section>
         {video ? (
           <section>
@@ -119,7 +133,7 @@ export default async function TutorProfilePage({
                     <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-mute">Verified session</span>
                   ) : null}
                 </div>
-                <p className="mt-2 leading-7">{review.comment}</p>
+                <p className="mt-2 leading-7 [overflow-wrap:anywhere]">{review.comment}</p>
                 <p className="mt-2 text-xs text-mute">{review.author.name}</p>
               </article>
             ))}
@@ -159,11 +173,11 @@ export default async function TutorProfilePage({
           )}
         </section>
       </div>
-      <aside className="order-1 h-fit lg:sticky lg:top-24 lg:order-2">
+      <aside className="order-1 h-fit w-full lg:sticky lg:top-24 lg:order-2">
         <div className="card overflow-hidden">
           <Portrait name={tutor.user.name} src={portraitFor(tutor.slug, tutor.user.imageUrl)} className="aspect-[4/5] h-auto w-full rounded-none text-3xl" />
           <div className="p-5">
-            <h1 className="font-serif text-4xl leading-none">{tutor.user.name}</h1>
+            <h1 className="font-serif text-4xl leading-none [overflow-wrap:anywhere]">{tutor.user.name}</h1>
             {tutor.verified ? (
               <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-gold">Verified tutor</p>
             ) : null}
@@ -210,9 +224,9 @@ export default async function TutorProfilePage({
 function Info({ title, body }: { title: string; body: string }) {
   if (!body) return null;
   return (
-    <article className="rounded-3xl border border-line p-5">
+    <article className="min-w-0 rounded-3xl border border-line p-5">
       <h2 className="font-serif text-2xl">{title}</h2>
-      <p className="mt-2 whitespace-pre-line text-sm leading-6 text-mute">{body}</p>
+      <p className="mt-2 whitespace-pre-line text-sm leading-6 text-mute [overflow-wrap:anywhere]">{body}</p>
     </article>
   );
 }
