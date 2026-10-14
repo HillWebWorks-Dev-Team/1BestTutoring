@@ -1,33 +1,176 @@
 # Cursor handoff — 1% Better Tutoring
 
-Paste this (or `@CURSOR_HANDOFF.md`) into a new Cursor chat on the work PC after `git pull`.
+Paste this (or `@CURSOR_HANDOFF.md`) into a new Cursor chat after `git pull`.
+
+**Branch note:** Phase 2 work was committed locally on `main` (`Ship Phase 2 desk…`). If push failed with GitHub 403, push with an account that has write access to `HillWebWorks-Dev-Team/1BestTutoring`.
 
 ---
 
-## Prompt to continue
+## What we did (this stretch)
 
-You are continuing work on **1% Better Tutoring** (`one-percent-better`), a Next.js App Router tutoring marketplace.
+Product work completed through Phase 2 items **#1–#7**. Summary for the boss / next engineer:
 
-### Repo / local setup
+| Area | What shipped |
+|------|----------------|
+| **Marketing polish** | Homepage redesign (full-bleed hero, university showcase/carousel, reviews), become-a-tutor redesign, about / tutors / subjects / how-it-works / FAQ aligned; header nav cleaned (Become a tutor in); active underline |
+| **University branding** | Real logos in `public/univ-logos/`; `UniversityMark` on tutor cards; filter by school; no-endorsement disclaimer |
+| **Tutor apply** | Dropdowns + Other (`SelectWithOther`); required profile photo; LinkedIn/resume autofill kept; admin applications show photos |
+| **Google Calendar** | Connect/disconnect UI in student, tutor, **and parent** settings; OAuth callback role-aware |
+| **Parent tools (#4)** | Full family desk: book/pay with `studentId` continuity, billing + receipts, rich progress (homework/goals/metrics), settings, parent redirects + notifications |
+| **Referral rewards (#5)** | Credit balance + ledger; grant $15/$15 (admin-configurable) after referred student’s first paid session; auto-apply at checkout from **platform fee only**; student Settings share UI |
+| **Reviews / trust (#6)** | “Awaiting your review” on student home; clearer review form; notify after session report; verified badges; admin publish/hide at `/dashboard/admin/reviews` |
+| **Admin analytics (#7)** | `/dashboard/admin/analytics` — revenue charts, consult/session mix, retention ring; linked from overview + payments |
+| **Handoff / quality** | Schema pushed to Supabase; `npm test` **18/18**; handoff doc kept current |
+
+**Not done in code this stretch:** production go-live cutover (keys, domain email, cron on Vercel), Phase 3 features, optional parent messaging/multi-guardian.
+
+---
+
+## What still needs to be done
+
+### Next: #8 Go-live (ops / config — needs secrets + DNS)
+1. Production Stripe **live** keys + Connect live mode; keep `PAYMENTS_MODE=stripe`
+2. Stripe production webhook → `https://<prod-host>/api/stripe/webhook` + matching `STRIPE_WEBHOOK_SECRET`
+3. Resend: **verify sending domain** (see Email section below); stop using `onboarding@resend.dev`
+4. Set production `EMAIL_FROM` (target: `1% Better Tutoring <hello@onepercentbetter.com>`)
+5. Set `CRON_SECRET`; ensure Vercel Cron hits `/api/cron/reminders` (hourly — plan must allow hourly crons)
+6. Production `NEXT_PUBLIC_APP_URL`; Google OAuth redirect URIs include prod `/api/calendar/google/callback`
+7. Production smoke: register → consult → assign → paid session → Zoom → email → Connect payout → reminder
+
+### Later / optional product
+- Parent messaging (today student↔tutor only)
+- Dedicated parent homework page (progress already has read-only board)
+- Multi-parent / unlink / invite-by-token
+- Phase 3: smart matching, AI practice, group tutoring
+
+### Git
+- Push local `main` if still ahead of `origin/main` (use org credentials)
+
+---
+
+## What we need (email, domains, accounts)
+
+Bring these from the teammate / password manager — **never commit `.env`**.
+
+### Email (Resend)
+| Need | Detail |
+|------|--------|
+| `RESEND_API_KEY` | Already used in test; keep for prod |
+| **Domain verification** | Add `onepercentbetter.com` (or chosen domain) in Resend → Domains; DNS TXT/DKIM/SPF as Resend shows |
+| `EMAIL_FROM` | Local/test today: `1% Better Tutoring <onboarding@resend.dev>` (Resend sandbox — can only send to verified recipient emails in some plans) |
+| **Production from** | Target: `1% Better Tutoring <hello@onepercentbetter.com>` (must match verified domain) |
+| Inbox to monitor | `hello@onepercentbetter.com` (or support alias) for contact/safety replies outside the app |
+| What emails fire | Booking confirm, cancel/reschedule, payment received, session report, review prompt, referral credit, application status, session reminders (cron) — all via `src/lib/notify.ts` → Resend when key set |
+
+Until the domain is verified, treat email as **dev-only**: use `onboarding@resend.dev` and confirm Resend dashboard delivery; don’t expect reliable mail to arbitrary parent/student addresses.
+
+### Stripe
+| Need | Detail |
+|------|--------|
+| Test keys | Current local/dev |
+| **Live keys** | For go-live only |
+| Webhook secrets | Local: `stripe listen`; Prod: Dashboard endpoint secret |
+| Connect | Tutors must finish Express onboarding (`stripeChargesEnabled` + `stripePayoutsEnabled`) before paid sessions |
+
+### Zoom
+| Need | Detail |
+|------|--------|
+| Server-to-Server OAuth | `ZOOM_ACCOUNT_ID`, `ZOOM_CLIENT_ID`, `ZOOM_CLIENT_SECRET` |
+| App scopes | Meeting create for `/users/me/meetings` |
+
+### Google Calendar
+| Need | Detail |
+|------|--------|
+| OAuth client | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` |
+| Redirect URI | `{APP_URL}/api/calendar/google/callback` (localhost + production) |
+
+### Hosting / cron
+| Need | Detail |
+|------|--------|
+| Vercel env | All secrets above + `AUTH_SECRET`, `DATABASE_URL`, `DIRECT_URL` |
+| `CRON_SECRET` | Shared secret; cron route rejects without it |
+| App URL | Public HTTPS URL for Stripe redirects, Zoom links in email, calendar OAuth |
+
+### Database
+| Need | Detail |
+|------|--------|
+| Supabase | Project `onepercentbettertutoring` / `vktfqnguthsitmyslvyu` |
+| Pooler + direct | Both URLs required for Prisma |
+
+---
+
+## What we need to test
+
+Demo password for all seed accounts: **`OnePercent!2026`**
+
+### A. Apply pipeline (home)
+1. Log out → `/become-a-tutor` → submit with **photo** + dropdowns (try Other fields)
+2. Admin `admin@onepercentbetter.com` → `/dashboard/admin/applications` → open applicant → photo visible → Approve / Waitlist / Request info / Reject
+3. Sign in as that tutor → `/dashboard/tutor/application` → status + photo match
+
+### B. Parent family tools
+1. Parent `danielle@onepercentbetter.com` or `anita@onepercentbetter.com` → `/dashboard/parent`
+2. Per-child **Book** → `/tutors?studentId=…` → profile → book (child stays selected)
+3. Free consult; if assigned, paid session + Stripe test pay
+4. `/dashboard/parent/billing` filters → open **Receipt**
+5. `/dashboard/parent/progress` child tabs → save goals; see homework/notes
+6. Calendar cancel/reschedule → stays on **parent** paths; parent gets notifications when applicable
+
+### C. Referral rewards
+1. Student `jordan@onepercentbetter.com` → Settings → code `JORDAN26` + credit balance (after seed: $15)
+2. New register with `?ref=JORDAN26` (invalid code should error)
+3. Book paid session with credit → charge reduced; booking summary shows credit line
+4. Referred student’s **first** paid session → both get credit + in-app/email notify
+5. Admin → Settings → change referrer/referee USD amounts
+
+### D. Reviews / trust
+1. Student with completed unreviewed session → `/dashboard/student` “Awaiting your review” → publish
+2. Tutor profile shows success (`?reviewed=1`) + “Verified session”
+3. Homepage reviews section (cache up to ~60s)
+4. Admin → Reviews → Hide → gone from public; Publish → back
+
+### E. Analytics
+1. Admin → `/dashboard/admin/analytics`
+2. Confirm revenue / activity / retention reflect succeeded payments and bookings
+3. Overview “Open analytics” + Payments “Analytics” links work
+
+### F. Core money / Zoom / email (regression)
+1. `stripe listen --forward-to localhost:3000/api/stripe/webhook`
+2. Student books paid session with Connect-ready tutor → checkout → webhook → booking confirmed + Zoom URL
+3. With `RESEND_API_KEY` set: confirm Resend shows delivery (to allowed recipients while on sandbox from-address)
+4. Google Calendar connect from settings (if Google client configured)
+
+### G. Production go-live smoke (after #8)
+1. Real card (small amount) + refund path
+2. Email arrives from `hello@…` (not resend.dev)
+3. Reminder cron fires once per booking window (check notifications / Resend)
+4. Mobile: home hero, tutors, book, parent billing
+
+---
+
+## Local setup (quick)
+
 ```bash
 npm install
-cp .env.example .env   # fill secrets — never commit .env
+cp .env.example .env   # fill secrets
 npx prisma db push
-npm run db:seed        # optional; destructive to demo data on shared Supabase
+npm run db:seed        # optional; wipes/recreates demo data — ask before shared DB
 npm run dev
+npm test               # expect 18/18
 ```
-- **Database:** Supabase Postgres — `DATABASE_URL` (pooler) + `DIRECT_URL`
-- Supabase: `onepercentbettertutoring` / ref `vktfqnguthsitmyslvyu` (us-east-1)
-- App: http://localhost:3000
-- Demo password (all seeded accounts): `OnePercent!2026`
-  - Admin: `admin@onepercentbetter.com`
-  - Student: `jordan@onepercentbetter.com` (`JORDAN26`, seed $15 credit)
-  - Student: `alex@onepercentbetter.com` (referred by `JORDAN26`)
-  - Tutor: `maya.chen@onepercentbetter.com`
-  - Parent: `danielle@onepercentbetter.com` → Jordan
-  - Parent: `anita@onepercentbetter.com` → Sam
 
-### Env (local — not in git)
+Seed accounts (password `OnePercent!2026`):
+
+| Role | Email |
+|------|--------|
+| Admin | `admin@onepercentbetter.com` |
+| Student | `jordan@onepercentbetter.com` |
+| Student | `alex@onepercentbetter.com` |
+| Tutor | `maya.chen@onepercentbetter.com` |
+| Parent | `danielle@onepercentbetter.com` (Jordan) |
+| Parent | `anita@onepercentbetter.com` (Sam) |
+
+### Env template (local)
 ```
 DATABASE_URL=...
 DIRECT_URL=...
@@ -44,95 +187,32 @@ RESEND_API_KEY=re_...
 EMAIL_FROM=1% Better Tutoring <onboarding@resend.dev>
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
+CRON_SECRET=...
 ```
 
 ```bash
 stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 
-### Boss vision
-Premium Ivy/top-30 tutoring: custom booking, free 15-min Zoom consults, admin matching before paid sessions, tutor-set rates, Stripe Connect ~70/30 (platform fee absorbs processing), Zoom + email + calendars, university branding, polished dashboards.  
-Phase 1 core desk · Phase 2 parents/reviews/referrals/analytics · Phase 3 AI/matching/groups.
-
 ---
 
-## Already built (Phase 1 + Phase 2 product)
+## Boss vision (source of truth)
 
-### Core
-- Marketing site (home, about, tutors, subjects, how-it-works, FAQ, contact, safety, terms, become-a-tutor, login/register)
-- Auth (student / parent / tutor), httpOnly cookies
-- Tutor apply → admin approve/reject/waitlist/request info; LinkedIn + resume autofill; dropdowns + Other; required profile photo
-- Admin assignments; paid sessions locked until assigned
-- Booking calendar, availability, cancel/reschedule; booking summary `/dashboard/bookings/[id]`
-- Student / tutor / parent / admin dashboards
-- Messaging, homework, session reports, progress notes
-- Notifications + Resend (test from); `.ics` + Google Calendar connect (student / tutor / parent settings)
-- Stripe Connect destination charges + webhooks; Zoom Server-to-Server OAuth
-
-### University branding
-- `UniversityShowcase`, `public/univ-logos/`, `UniversityMark` (logo or letter fallback)
-- `/tutors?university=…`; disclaimer kept; clean navbar
-
-### Parent tools (#4)
-- Family desk, `studentId` through browse→book, billing + receipts, rich progress, settings, parent-aware redirects/notifications
-
-### Referral rewards (#5)
-- Credit balance + ledger; $15/$15 defaults (admin settings); grant on referred student’s first paid session
-- Auto-apply at checkout up to platform commission only (tutor share intact)
-- Student Settings share UI; book banner; booking summary breakdown
-
-### Reviews / trust (#6)
-- Student “Awaiting your review”; clearer form; notify after session report
-- Verified-session badges; home up to 9 reviews; admin `/dashboard/admin/reviews` publish/hide
-
-### Admin analytics (#7)
-- `/dashboard/admin/analytics` — revenue area (6 mo), weekly pulse (12 wk), consult/session bars, retention ring + consult→match
-- Linked from overview + payments; `src/lib/analytics.ts` + unit tests
-
-### Verified
-- `npm test` → **18/18** pass
-- Schema on Supabase via `prisma db push`; Prisma client generated
-- Earlier smoke: public 200, Zoom 201, Resend 200, Stripe CLI webhooks 200
-
----
-
-## Still to do
-
-### #8 Go-live (next — ops / config, not feature code)
-1. Switch to **live** Stripe keys; set `PAYMENTS_MODE=stripe` in production
-2. Vercel production webhook → `/api/stripe/webhook` + `STRIPE_WEBHOOK_SECRET`
-3. Verify Resend domain; set `EMAIL_FROM` to `hello@onepercentbetter.com` (or chosen domain)
-4. Set `CRON_SECRET` and schedule `/api/cron/reminders`
-5. Confirm `NEXT_PUBLIC_APP_URL` is the production URL; Google OAuth redirect URIs include prod callback
-6. Final smoke on production (book consult, paid session, Zoom, email, Connect payout)
-
-### Phase 3 (later)
-- Smart tutor matching, AI practice tools, group tutoring
-
-### Deferred manual tests (home / when convenient)
-**Apply pipeline** — `/become-a-tutor` → admin applications → tutor application status + photo  
-
-**Parent tools** — Danielle/Anita family desk → book with `studentId` → billing receipt → progress goals → cancel/reschedule stays on parent  
-
-**Referrals** — Settings balance; `?ref=JORDAN26`; paid session applies credit; first paid for referred student grants rewards  
-
-**Reviews** — student overview review → profile success → admin hide/publish  
-
-**Analytics** — admin → Analytics; charts populate from succeeded transactions + bookings  
-
-### Optional later polish
-- Parent messaging; dedicated parent homework page; multi-parent / unlink / invite-by-token
+Premium Ivy/top-30 tutoring: custom booking (not Calendly), free 15-min Zoom consults, admin-controlled matching before paid sessions, tutor-set hourly rates, Stripe Connect destination charges ~70/30 (platform fee covers processing), Zoom + email + calendars, strong university branding, polished dashboards.  
+**Phase 1** core desk · **Phase 2** parents / reviews / referrals / analytics · **Phase 3** AI / smart matching / groups.
 
 ---
 
 ## Constraints
-- Paid booking needs tutor Stripe Connect complete (charges + payouts); seed tutors vary
+- Paid booking requires tutor Stripe Connect complete; only some seed tutors are ready
 - Stay on **test** Stripe until go-live cutover
 - Never commit `.env`
 - Ask before destructive reseed on shared Supabase
-- Windows: stop `next dev` before `prisma generate` if EPERM on query engine DLL
+- Windows: stop `next dev` before `prisma generate` if EPERM on the query engine DLL
 
 ---
 
 ## How to work next
-Pick **#8 Go-live** checklist items with the teammate who holds production secrets. Prefer small focused PRs for any code needed; keep `npm test` green.
+1. Finish **manual test** checklists A–F at home when convenient  
+2. With ops owner: execute **#8 Go-live** (email domain + Stripe live + cron)  
+3. Prefer small focused PRs for any code fixes found in testing; keep `npm test` green
